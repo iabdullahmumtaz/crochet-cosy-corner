@@ -148,6 +148,23 @@ async function ensureCustomer(email: string, name?: unknown, phone?: unknown) {
   return result;
 }
 
+export async function resendSignupEmail(email: string): Promise<ActionOk | ActionFail> {
+  const parsed = loginSchema.pick({ email: true }).safeParse({ email });
+  if (!parsed.success) return { ok: false, error: "Enter the email you signed up with." };
+  const clean = parsed.data.email.toLowerCase();
+  const limited = rateLimit(`resend:${clean}:${await callerKey()}`, 3, 60 * 60 * 1000);
+  if (limited) return { ok: false, error: limited };
+  const supabase = supabaseAuth();
+  if (!supabase) return { ok: false, error: "Sign-up email is not configured yet." };
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: clean,
+    options: { emailRedirectTo: `${await siteOrigin()}/auth/confirm` },
+  });
+  if (error) return { ok: false, error: "A new link could not be sent. Try again in a moment." };
+  return { ok: true };
+}
+
 export async function completeEmailSignup(accessToken: string): Promise<ActionOk | ActionFail> {
   if (!accessToken || accessToken.length > 4000) return { ok: false, error: "That confirmation link is not valid." };
   const supabase = supabaseAuth();

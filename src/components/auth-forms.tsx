@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { loginAdmin, loginCustomer, registerCustomer } from "@/actions/auth";
+import { loginAdmin, loginCustomer, registerCustomer, resendSignupEmail } from "@/actions/auth";
 import { Button, Field, controlClass } from "@/components/button";
 
 function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -35,6 +35,7 @@ export function LoginForm({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
 
   return (
     <form
@@ -47,8 +48,10 @@ export function LoginForm({
         setPending(false);
         if (!result.ok) {
           toast.error(result.error);
+          setConfirmEmail(mode === "customer" && result.error.includes("Confirm your email") ? String(data.get("email") ?? "") : "");
           return;
         }
+        setConfirmEmail("");
         toast.success("Signed in");
         router.push(from);
         router.refresh();
@@ -62,6 +65,24 @@ export function LoginForm({
         <PasswordInput name="password" required autoComplete="current-password" />
       </Field>
       <Button disabled={pending}>{pending ? "Signing in…" : mode === "admin" ? "Open the desk" : "Sign in"}</Button>
+      {confirmEmail ? (
+        <button
+          type="button"
+          className="text-left text-sm text-sage-deep underline"
+          onClick={async () => {
+            setPending(true);
+            const result = await resendSignupEmail(confirmEmail);
+            setPending(false);
+            if (!result.ok) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success("A new confirmation link is on its way.");
+          }}
+        >
+          Send a new confirmation link
+        </button>
+      ) : null}
     </form>
   );
 }

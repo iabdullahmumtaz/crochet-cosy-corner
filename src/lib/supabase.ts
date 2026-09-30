@@ -11,6 +11,11 @@ export function supabaseAuth() {
 }
 
 export async function siteOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (configured) return configured;
+  if (process.env.VERCEL_ENV === "production" && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
   const { headers } = await import("next/headers");
   const headerList = await headers();
   const host = headerList.get("x-forwarded-host") || headerList.get("host");
