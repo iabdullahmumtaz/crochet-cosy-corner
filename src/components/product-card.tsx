@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { ProductArt } from "@/components/product-art";
@@ -9,7 +10,8 @@ import { formatRs, percentOff } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
 export function ProductCard({ product }: { product: Product }) {
-  const { add, toggleKeep, keepsakes } = useCart();
+  const router = useRouter();
+  const { add, toggleKeep, keepsakes, setOpen } = useCart();
   const saved = keepsakes.includes(product.id);
   const off = percentOff(product.price, product.compareAt);
 
@@ -28,7 +30,12 @@ export function ProductCard({ product }: { product: Product }) {
       palette: product.palette,
     });
     if (result === "max") toast.error("You can keep up to 5 of this piece.");
-    else toast.success(result === "updated" ? "Updated your basket" : "Added to your basket");
+    else {
+      toast.success(result === "updated" ? "Updated your basket" : "Added to your basket", {
+        description: product.name,
+        action: { label: "View", onClick: () => setOpen(true) },
+      });
+    }
   }
 
   return (
@@ -40,7 +47,10 @@ export function ProductCard({ product }: { product: Product }) {
         className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/70 bg-white/90 text-bark backdrop-blur-sm transition hover:bg-white"
         onClick={() => {
           const nowSaved = toggleKeep(product.id);
-          toast.success(nowSaved ? "Saved to keepsakes" : "Removed from keepsakes");
+          toast.success(nowSaved ? "Saved to keepsakes" : "Removed from keepsakes", {
+            description: product.name,
+            action: nowSaved ? { label: "Open", onClick: () => router.push("/keepsakes") } : undefined,
+          });
         }}
       >
         <Heart className={`h-4 w-4 ${saved ? "fill-sale text-sale" : ""}`} />
@@ -79,6 +89,11 @@ export function ProductCard({ product }: { product: Product }) {
           ) : null}
         </p>
       </Link>
+      {product.stock > 0 ? (
+        <button type="button" onClick={onAdd} className="mt-3 h-10 w-full rounded-full bg-sage text-sm text-white md:hidden">
+          Add to cart
+        </button>
+      ) : null}
     </article>
   );
 }

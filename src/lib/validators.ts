@@ -129,10 +129,26 @@ export const productSchema = z.object({
 
 export const orderUpdateSchema = z.object({
   number: z.string().trim().regex(/^CC-\d+$/),
-  intent: z.enum(["advance", "cancel", "note"]),
+  intent: z.enum(["advance", "cancel", "note", "set", "details"]),
+  status: z.enum(["placed", "confirmed", "making", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"]).optional(),
   note: z.string().trim().max(240).optional().default(""),
   courier: z.string().trim().max(40).optional().default(""),
   trackingCode: z.string().trim().max(40).optional().default(""),
+  name: z.string().trim().min(2).max(80).optional(),
+  phone: z.string().trim().max(16).optional().default(""),
+  address: z.string().trim().min(6).max(160).optional(),
+  city: z.string().trim().min(2).max(40).optional(),
+});
+
+export const customerUpdateSchema = z.object({
+  id: z.string().trim().min(8).max(80),
+  name: z.string().trim().min(2, "Add a name.").max(80),
+  phone: z.string().trim().max(16).optional().default(""),
+  city: z.string().trim().max(40).optional().default(""),
+});
+
+export const nextNumberSchema = z.object({
+  seq: z.number().int().min(1000, "Use a number from 1000 up.").max(999999),
 });
 
 export const lookupSchema = trackSchema;

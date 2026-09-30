@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useCart } from "@/components/cart-provider";
 import type { PublicUser, ShopCategory } from "@/lib/types";
 
 export function Header({ user, categories }: { user: PublicUser | null; categories: ShopCategory[] }) {
-  const { count, setOpen, ready } = useCart();
+  const { count, keepsakes, setOpen, ready } = useCart();
   const [menu, setMenu] = useState(false);
   const accountHref = user?.role === "admin" ? "/admin" : user ? "/account" : "/login";
   const accountLabel = user?.role === "admin" ? "Desk" : user ? "Account" : "Sign in";
@@ -36,6 +36,14 @@ export function Header({ user, categories }: { user: PublicUser | null; categori
           </form>
           <Link href={accountHref} className="hidden h-10 items-center rounded-full px-3 text-sm text-bark transition hover:bg-white sm:inline-flex">
             {accountLabel}
+          </Link>
+          <Link href="/keepsakes" className="relative grid h-10 w-10 place-items-center rounded-full transition hover:bg-white" aria-label="Keepsakes">
+            <Heart className="h-5 w-5" strokeWidth={1.5} />
+            {ready && keepsakes.length > 0 ? (
+              <span className="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-sage px-1 text-[10px] font-medium text-white">
+                {keepsakes.length}
+              </span>
+            ) : null}
           </Link>
           <button
             type="button"
@@ -71,6 +79,7 @@ export function Header({ user, categories }: { user: PublicUser | null; categori
                 {category.label}
               </Link>
             ))}
+            <Link href="/keepsakes" onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">Keepsakes</Link>
             <Link href="/track" onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">Track</Link>
             <Link href={accountHref} onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">{accountLabel}</Link>
           </div>

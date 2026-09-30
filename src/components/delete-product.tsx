@@ -6,16 +6,17 @@ import { toast } from "sonner";
 import { deleteProduct } from "@/actions/admin";
 import { buttonClass } from "@/components/button";
 
-export function DeleteProduct({ id }: { id: string }) {
+export function DeleteProduct({ id, compact = false }: { id: string; compact?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
   return (
     <button
       type="button"
-      className={buttonClass("danger", "mt-3")}
+      className={compact ? "text-sm text-sale" : buttonClass("danger", "mt-3")}
       disabled={pending}
       onClick={async () => {
+        if (!window.confirm("Remove this piece from the shop?")) return;
         setPending(true);
         const result = await deleteProduct(id);
         setPending(false);
@@ -24,11 +25,11 @@ export function DeleteProduct({ id }: { id: string }) {
           return;
         }
         toast.success("Piece removed");
-        router.push("/admin/products");
+        if (!compact) router.push("/admin/products");
         router.refresh();
       }}
     >
-      {pending ? "Removing…" : "Delete piece"}
+      {pending ? "Removing…" : compact ? "Delete" : "Delete piece"}
     </button>
   );
 }

@@ -10,25 +10,33 @@ const filters = ["all", "open", "placed", "confirmed", "making", "packed", "ship
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const status = params.status ?? "all";
+  const q = (params.q ?? "").trim().toLowerCase();
   const store = await readStore();
   const orders = store.orders.filter((order) => {
-    if (status === "all") return true;
-    if (status === "open") return order.status !== "delivered" && order.status !== "cancelled";
-    return order.status === status;
+    const matchesStatus = status === "all" || (status === "open" ? order.status !== "delivered" && order.status !== "cancelled" : order.status === status);
+    if (!matchesStatus) return false;
+    if (!q) return true;
+    return [order.number, order.name, order.email, order.city, order.phone].join(" ").toLowerCase().includes(q);
   });
 
   return (
     <div>
-      <h1 className="font-display text-4xl text-cocoa">Orders</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="font-display text-4xl text-cocoa">Orders</h1>
+        <form>
+          {status !== "all" ? <input type="hidden" name="status" value={status} /> : null}
+          <input name="q" defaultValue={params.q ?? ""} placeholder="Search name, email, or CC-number" className="h-12 w-72 max-w-full rounded-full border border-line bg-white px-4 text-sm" />
+        </form>
+      </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {filters.map((filter) => (
           <Link
             key={filter}
-            href={filter === "all" ? "/admin/orders" : `/admin/orders?status=${filter}`}
+            href={filter === "all" ? (q ? `/admin/orders?q=${encodeURIComponent(q)}` : "/admin/orders") : `/admin/orders?status=${filter}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             className={`rounded-full px-3 py-1.5 text-xs ${status === filter ? "bg-sage text-white" : "bg-white text-bark ring-1 ring-line"}`}
           >
             {filter === "all" || filter === "open" ? filter : STATUS_LABEL[filter as OrderStatus]}
@@ -53,7 +61,10 @@ export default async function OrdersPage({
                   <Link href={`/admin/orders/${order.number}`} className="text-ink hover:underline">{order.number}</Link>
                   <span className="block text-xs text-muted">{formatWhen(order.createdAt)}</span>
                 </td>
-                <td className="px-4 py-3">{order.name}</td>
+                <td className="px-4 py-3">
+                  {order.userId ? <Link href={`/admin/customers/${order.userId}`} className="hover:underline">{order.name}</Link> : order.name}
+                  <span className="block text-xs text-muted">{order.email}</span>
+                </td>
                 <td className="px-4 py-3 text-muted">{order.city}</td>
                 <td className="px-4 py-3">{formatRs(order.total)}</td>
                 <td className="px-4 py-3"><StatusPill status={order.status} /></td>

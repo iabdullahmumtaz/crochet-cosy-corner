@@ -1,85 +1,102 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateOrder } from "@/actions/admin";
-import { Button, controlClass } from "@/components/button";
-import { nextStatus, STATUS_LABEL } from "@/lib/order-flow";
+import { Button, Field, controlClass } from "@/components/button";
+import { STATUS_LABEL } from "@/lib/order-flow";
 import type { OrderStatus } from "@/lib/types";
+
+const statuses = Object.keys(STATUS_LABEL) as OrderStatus[];
 
 export function OrderActions({
   number,
   status,
   courier,
   trackingCode,
+  name,
+  phone,
+  address,
+  city,
 }: {
   number: string;
   status: OrderStatus;
   courier: string;
   trackingCode: string;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
 }) {
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
   const [pending, setPending] = useState(false);
-  const upcoming = nextStatus(status);
 
-  async function run(intent: "advance" | "cancel" | "note", form?: HTMLFormElement) {
-    const data = form ? new FormData(form) : new FormData();
+  async function send(intent: "set" | "details", form: HTMLFormElement) {
+    const data = new FormData(form);
     setPending(true);
     const result = await updateOrder({
       number,
       intent,
+      status: data.get("status"),
       note: data.get("note") ?? "",
-      courier: data.get("courier") ?? courier,
-      trackingCode: data.get("trackingCode") ?? trackingCode,
+      courier: data.get("courier") ?? "",
+      trackingCode: data.get("trackingCode") ?? "",
+      name: data.get("name"),
+      phone: data.get("phone") ?? "",
+      address: data.get("address"),
+      city: data.get("city"),
     });
     setPending(false);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
-    if (form && intent === "note") form.reset();
-    toast.success(intent === "note" ? "Note saved" : intent === "cancel" ? "Order cancelled" : "Status updated");
+    toast.success(intent === "details" ? "Delivery details saved" : "Order updated");
     router.refresh();
   }
 
   return (
     <form
-      ref={formRef}
       className="grid gap-3"
       onSubmit={(event) => {
         event.preventDefault();
-        void run("note", event.currentTarget);
+        void send("set", event.currentTarget);
       }}
     >
-      {upcoming === "shipped" ? (
-        <>
-          <input name="courier" defaultValue={courier || "Studio courier"} placeholder="Courier" className={controlClass} />
-          <input name="trackingCode" defaultValue={trackingCode} placeholder="Tracking code" className={controlClass} />
-        </>
-      ) : null}
-      <textarea name="note" rows={3} placeholder="A note for the customer" className={`${controlClass} h-auto py-3`} />
+      <Field label="Name">
+        <input name="name" required defaultValue={name} className={controlClass} />
+      </Field>
+      <Field label="Phone">
+        <input name="phone" defaultValue={phone} className={controlClass} />
+      </Field>
+      <Field label="Address">
+        <input name="address" required defaultValue={address} className={controlClass} />
+      </Field>
+      <Field label="City">
+        <input name="city" required defaultValue={city} className={controlClass} />
+      </Field>
+      <Field label="Courier">
+        <input name="courier" defaultValue={courier} placeholder="Studio courier" className={controlClass} />
+      </Field>
+      <Field label="Tracking code">
+        <input name="trackingCode" defaultValue={trackingCode} className={controlClass} />
+      </Field>
+      <Field label="Status">
+        <select name="status" defaultValue={status} className={controlClass}>
+          {statuses.map((item) => (
+            <option key={item} value={item}>{STATUS_LABEL[item]}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Note for the customer">
+        <textarea name="note" rows={3} placeholder="Optional. Shown on the tracking page." className={`${controlClass} h-auto py-3`} />
+      </Field>
       <div className="flex flex-wrap gap-2">
-        {upcoming ? (
-          <Button type="button" disabled={pending} onClick={() => void run("advance", formRef.current ?? undefined)}>
-            Move to {STATUS_LABEL[upcoming].toLowerCase()}
-          </Button>
-        ) : null}
-        <Button type="submit" variant="ghost" disabled={pending}>Save note</Button>
-        {status !== "cancelled" && status !== "delivered" ? (
-          <Button
-            type="button"
-            variant="danger"
-            disabled={pending}
-            onClick={() => {
-              if (!window.confirm("Cancel this order and return the pieces to the shelf?")) return;
-              void run("cancel");
-            }}
-          >
-            Cancel order
-          </Button>
-        ) : null}
+        <Button disabled={pending}>{pending ? "Saving…" : "Update order"}</Button>
+        <Button type="button" variant="ghost" disabled={pending} onClick={(event) => void send("details", event.currentTarget.form!)}>
+          Save details only
+        </Button>
       </div>
     </form>
   );

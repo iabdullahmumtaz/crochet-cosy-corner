@@ -76,7 +76,7 @@ export function CheckoutForm({ user }: { user: PublicUser | null }) {
           return;
         }
         clear();
-        toast.success("Order placed", { description: result.number });
+        toast.success("Order placed", { description: `${result.number} is in the book.` });
         router.push(`/order/${result.number}`);
         router.refresh();
       }}

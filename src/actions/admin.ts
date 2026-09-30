@@ -5,8 +5,8 @@ import { updateStore } from "@/lib/db";
 import { eventCopy, makeEvent, nextStatus } from "@/lib/order-flow";
 import { slugify } from "@/lib/format";
 import { uploadShopImage } from "@/lib/storage";
-import { categorySchema, couponSchema, orderUpdateSchema, productSchema, whatsappSchema } from "@/lib/validators";
-import type { ActionFail, ActionOk, Product, ShopCategory } from "@/lib/types";
+import { categorySchema, couponSchema, customerUpdateSchema, nextNumberSchema, orderUpdateSchema, productSchema, whatsappSchema } from "@/lib/validators";
+import type { ActionFail, ActionOk, Order, OrderStatus, Product, ShopCategory } from "@/lib/types";
 
 export async function uploadDeskImage(formData: FormData) {
   const admin = await requireRole("admin");
@@ -73,11 +73,58 @@ export async function saveProduct(input: unknown): Promise<ActionFail | { ok: tr
   });
 }
 
+function restoreStock(store: { products: Product[] }, order: Order) {
+  if (order.stockRestored) return;
+  for (const item of order.items) {
+    const product = store.products.find((piece) => piece.id === item.productId);
+    if (product) product.stock += item.qty;
+  }
+  order.stockRestored = true;
+}
+
+function takeStock(store: { products: Product[] }, order: Order): string | null {
+  if (!order.stockRestored) return null;
+  for (const item of order.items) {
+    const product = store.products.find((piece) => piece.id === item.productId);
+    if (!product || product.stock < item.qty) return `${item.name} does not have enough left to reopen this order.`;
+  }
+  for (const item of order.items) {
+    const product = store.products.find((piece) => piece.id === item.productId);
+    if (product) product.stock -= item.qty;
+  }
+  order.stockRestored = false;
+  return null;
+}
+
+function applyStatus(store: { products: Product[] }, order: Order, status: OrderStatus, note: string, courier: string, trackingCode: string): ActionOk | ActionFail {
+  if (courier) order.courier = courier;
+  if (trackingCode) order.trackingCode = trackingCode;
+  if (status === order.status) {
+    if (note) order.events.push(makeEvent("note", "Studio note", note));
+    return { ok: true };
+  }
+  if (status === "cancelled") {
+    if (order.status === "delivered") return { ok: false, error: "A delivered order stays delivered." };
+    restoreStock(store, order);
+  } else if (order.status === "cancelled") {
+    const blocked = takeStock(store, order);
+    if (blocked) return { ok: false, error: blocked };
+  }
+  if (status === "shipped" || status === "out_for_delivery") {
+    order.courier = order.courier || "Studio courier";
+    order.trackingCode = order.trackingCode || `COS-${order.number.slice(3)}`;
+  }
+  order.status = status;
+  const copy = eventCopy(status, { courier: order.courier, trackingCode: order.trackingCode });
+  order.events.push(makeEvent(status, copy.label, note || copy.note));
+  return { ok: true };
+}
+
 export async function updateOrder(input: unknown): Promise<ActionOk | ActionFail> {
   const admin = await requireRole("admin");
   if (!admin) return { ok: false, error: "Sign in to the studio desk." };
   const parsed = orderUpdateSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "That update could not be read." };
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "That update could not be read." };
 
   return updateStore((store) => {
     const order = store.orders.find((item) => item.number === parsed.data.number);
@@ -89,32 +136,28 @@ export async function updateOrder(input: unknown): Promise<ActionOk | ActionFail
       return { ok: true as const };
     }
 
-    if (parsed.data.intent === "cancel") {
-      if (order.status === "cancelled") return { ok: false as const, error: "This order is already cancelled." };
-      if (order.status === "delivered") return { ok: false as const, error: "A delivered order stays delivered." };
-      if (!order.stockRestored) {
-        for (const item of order.items) {
-          const product = store.products.find((piece) => piece.id === item.productId);
-          if (product) product.stock += item.qty;
-        }
-        order.stockRestored = true;
-      }
-      order.status = "cancelled";
-      const copy = eventCopy("cancelled");
-      order.events.push(makeEvent("cancelled", copy.label, parsed.data.note || copy.note));
+    if (parsed.data.intent === "details") {
+      if (parsed.data.name) order.name = parsed.data.name;
+      if (parsed.data.phone !== undefined) order.phone = parsed.data.phone;
+      if (parsed.data.address) order.address = parsed.data.address;
+      if (parsed.data.city) order.city = parsed.data.city;
+      order.courier = parsed.data.courier;
+      order.trackingCode = parsed.data.trackingCode;
       return { ok: true as const };
+    }
+
+    if (parsed.data.intent === "cancel") {
+      return applyStatus(store, order, "cancelled", parsed.data.note, parsed.data.courier, parsed.data.trackingCode);
+    }
+
+    if (parsed.data.intent === "set") {
+      if (!parsed.data.status) return { ok: false as const, error: "Choose a status." };
+      return applyStatus(store, order, parsed.data.status, parsed.data.note, parsed.data.courier, parsed.data.trackingCode);
     }
 
     const upcoming = nextStatus(order.status);
     if (!upcoming) return { ok: false as const, error: "This order has nowhere further to go." };
-    if (upcoming === "shipped") {
-      order.courier = parsed.data.courier || "Studio courier";
-      order.trackingCode = parsed.data.trackingCode || `COS-${order.number.slice(3)}`;
-    }
-    order.status = upcoming;
-    const copy = eventCopy(upcoming, { courier: order.courier, trackingCode: order.trackingCode });
-    order.events.push(makeEvent(upcoming, copy.label, parsed.data.note || copy.note));
-    return { ok: true as const };
+    return applyStatus(store, order, upcoming, parsed.data.note, parsed.data.courier, parsed.data.trackingCode);
   });
 }
 
@@ -137,6 +180,69 @@ export async function saveCoupon(input: unknown): Promise<ActionOk | ActionFail>
     store.coupons.unshift({ ...parsed.data, code });
     return { ok: true as const };
   });
+}
+
+export async function deleteCoupon(code: string): Promise<ActionOk | ActionFail> {
+  const admin = await requireRole("admin");
+  if (!admin) return { ok: false, error: "Sign in to the studio desk." };
+  const clean = code.trim().toUpperCase();
+  if (!/^[A-Z0-9]{3,20}$/.test(clean)) return { ok: false, error: "That offer could not be removed." };
+  const found = await updateStore((store) => {
+    const before = store.coupons.length;
+    store.coupons = store.coupons.filter((item) => item.code !== clean);
+    return store.coupons.length < before;
+  });
+  if (!found) return { ok: false, error: "That offer is already gone." };
+  return { ok: true };
+}
+
+export async function updateCustomer(input: unknown): Promise<ActionOk | ActionFail> {
+  const admin = await requireRole("admin");
+  if (!admin) return { ok: false, error: "Sign in to the studio desk." };
+  const parsed = customerUpdateSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the customer." };
+  const found = await updateStore((store) => {
+    const user = store.users.find((item) => item.id === parsed.data.id && item.role === "customer");
+    if (!user) return false;
+    user.name = parsed.data.name;
+    user.phone = parsed.data.phone;
+    user.city = parsed.data.city;
+    return true;
+  });
+  if (!found) return { ok: false, error: "That shopper is not in the book." };
+  return { ok: true };
+}
+
+export async function saveNextNumber(input: unknown): Promise<ActionOk | ActionFail> {
+  const admin = await requireRole("admin");
+  if (!admin) return { ok: false, error: "Sign in to the studio desk." };
+  const parsed = nextNumberSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the next order number." };
+  return updateStore((store) => {
+    const highest = store.orders.reduce((max, order) => {
+      const value = Number(order.number.replace("CC-", ""));
+      return Number.isFinite(value) ? Math.max(max, value) : max;
+    }, 0);
+    if (parsed.data.seq <= highest) {
+      return { ok: false as const, error: `The next number has to be higher than CC-${highest}.` };
+    }
+    store.seq = parsed.data.seq;
+    return { ok: true as const };
+  });
+}
+
+export async function removeSubscriber(id: string): Promise<ActionOk | ActionFail> {
+  const admin = await requireRole("admin");
+  if (!admin) return { ok: false, error: "Sign in to the studio desk." };
+  if (!id || id.length > 80) return { ok: false, error: "That address could not be removed." };
+  const found = await updateStore((store) => {
+    store.subscribers ??= [];
+    const before = store.subscribers.length;
+    store.subscribers = store.subscribers.filter((item) => item.id !== id);
+    return store.subscribers.length < before;
+  });
+  if (!found) return { ok: false, error: "That address is already gone." };
+  return { ok: true };
 }
 
 export async function markMessage(id: string, read: boolean): Promise<ActionOk | ActionFail> {

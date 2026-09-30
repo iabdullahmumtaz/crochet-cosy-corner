@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { KeepCount } from "@/components/keep-count";
 import { ProfileForm } from "@/components/profile-form";
 import { StatusPill } from "@/components/yarn-tracker";
 import { getCurrentUser } from "@/lib/auth";
@@ -15,22 +16,55 @@ export default async function AccountPage() {
   const store = await readStore();
   const orders = store.orders.filter((order) => order.userId === user.id);
 
+  const first = user.name.trim().slice(0, 1).toUpperCase() || "C";
+
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[320px_1fr]">
+    <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[340px_1fr]">
+      <aside className="space-y-4">
+        <section className="rounded-[28px] border border-line bg-white p-6">
+          <div className="flex items-center gap-4">
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-foam font-display text-3xl text-cocoa">{first}</div>
+            <div className="min-w-0">
+              <p className="font-script text-2xl text-sage">your profile</p>
+              <h1 className="truncate font-display text-3xl text-cocoa">{user.name}</h1>
+              <p className="truncate text-sm text-muted">{user.email}</p>
+            </div>
+          </div>
+          <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-2xl bg-sand px-3 py-3">
+              <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">Orders</dt>
+              <dd className="mt-1 font-display text-2xl text-cocoa">{orders.length}</dd>
+            </div>
+            <div className="rounded-2xl bg-sand px-3 py-3">
+              <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">Keepsakes</dt>
+              <dd className="mt-1 font-display text-2xl text-cocoa"><KeepCount /></dd>
+            </div>
+            <div className="rounded-2xl bg-sand px-3 py-3">
+              <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">City</dt>
+              <dd className="mt-1 text-ink">{user.city || "Not set"}</dd>
+            </div>
+            <div className="rounded-2xl bg-sand px-3 py-3">
+              <dt className="text-[11px] tracking-[0.14em] text-muted uppercase">Since</dt>
+              <dd className="mt-1 text-ink">{formatWhen(user.createdAt)}</dd>
+            </div>
+          </dl>
+        </section>
+        <nav className="flex flex-wrap gap-2 text-sm">
+          <Link href="/account/addresses" className="rounded-full border border-line bg-white px-4 py-2 text-bark hover:text-ink">Addresses</Link>
+          <Link href="/keepsakes" className="rounded-full border border-line bg-white px-4 py-2 text-bark hover:text-ink">Keepsakes</Link>
+          <Link href="/track" className="rounded-full border border-line bg-white px-4 py-2 text-bark hover:text-ink">Track</Link>
+        </nav>
+      </aside>
+      <div className="space-y-10">
       <section>
-        <p className="font-script text-3xl text-sage">hello</p>
-        <h1 className="font-display text-5xl text-cocoa">{user.name.split(" ")[0]}</h1>
-        <div className="mt-6 rounded-[28px] border border-line bg-white p-5">
+        <h2 className="font-display text-3xl text-cocoa">Details</h2>
+        <div className="mt-4 rounded-[28px] border border-line bg-white p-5">
           <ProfileForm user={user} />
         </div>
       </section>
       <section>
         <div className="mb-4 flex items-end justify-between">
-          <h2 className="font-display text-3xl text-bark">Orders</h2>
-          <span className="flex gap-4 text-sm font-semibold text-sage">
-            <Link href="/account/addresses">Addresses</Link>
-            <Link href="/keepsakes">Keepsakes</Link>
-          </span>
+          <h2 className="font-display text-3xl text-cocoa">Orders</h2>
         </div>
         {orders.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-line bg-white px-6 py-12">
@@ -56,6 +90,7 @@ export default async function AccountPage() {
           </ul>
         )}
       </section>
+      </div>
     </div>
   );
 }

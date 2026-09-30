@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { defaultCoupons } from "@/lib/coupons";
 import { CATEGORIES } from "@/lib/domain";
 import { createSeed } from "@/lib/seed";
@@ -43,11 +44,11 @@ async function load() {
   return loading;
 }
 
-export async function readStore() {
+export const readStore = cache(async () => {
   const store = await load();
   hydrate(store);
   return structuredClone(store);
-}
+});
 
 export async function updateStore<T>(mutator: (store: Store) => T): Promise<T> {
   const run = queue.then(async () => {

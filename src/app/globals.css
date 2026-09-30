@@ -84,7 +84,19 @@ body {
   color: white;
 }
 
+.bone {
+  background: linear-gradient(100deg, #ffe4ee 20%, #fff 45%, #ffe4ee 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.15s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .lift, .lift:hover { transform: none; transition: none; }
+  .bone { animation: none; }
 }

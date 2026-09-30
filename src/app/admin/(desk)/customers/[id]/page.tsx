@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CustomerEditor } from "@/components/customer-editor";
 import { StatusPill } from "@/components/yarn-tracker";
 import { readStore } from "@/lib/db";
 import { formatRs, formatWhen } from "@/lib/format";
@@ -21,6 +22,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         <div><dt className="text-muted">City</dt><dd>{user.city || "—"}</dd></div>
         <div><dt className="text-muted">Joined</dt><dd>{formatWhen(user.createdAt)}</dd></div>
       </dl>
+      <CustomerEditor id={user.id} name={user.name} phone={user.phone} city={user.city} />
       <h2 className="mt-8 font-display text-2xl text-cocoa">Addresses</h2>
       <ul className="mt-3 space-y-2">
         {(user.addresses ?? []).length === 0 ? <li className="text-sm text-muted">No saved addresses.</li> : null}

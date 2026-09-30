@@ -4,13 +4,14 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { useCart } from "@/components/cart-provider";
 import { buttonClass } from "@/components/button";
+import { CardGridSkeleton } from "@/components/skeleton";
 import type { Product } from "@/lib/types";
 
 export function KeepsakesGrid({ products }: { products: Product[] }) {
   const { keepsakes, ready } = useCart();
   const saved = products.filter((product) => keepsakes.includes(product.id));
 
-  if (!ready) return <p className="text-sm text-muted">Opening your keepsakes…</p>;
+  if (!ready) return <CardGridSkeleton />;
 
   if (saved.length === 0) {
     return (

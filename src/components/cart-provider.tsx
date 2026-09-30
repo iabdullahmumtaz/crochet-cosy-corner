@@ -135,14 +135,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       {children}
       <Toaster
         position="top-center"
+        richColors
+        closeButton
+        duration={3200}
         toastOptions={{
           style: {
             background: "#ffffff",
-            color: "#16121a",
-            border: "1px solid #e6e0e6",
-            borderRadius: "16px",
+            color: "#3d2433",
+            border: "1px solid #f3d5e0",
+            borderRadius: "18px",
             fontFamily: "var(--font-manrope), sans-serif",
-            boxShadow: "0 18px 40px -28px rgba(22,18,26,0.55)",
+            boxShadow: "0 22px 50px -28px rgba(196,77,114,0.55)",
           },
         }}
       />
