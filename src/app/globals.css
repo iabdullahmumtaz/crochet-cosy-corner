@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-manrope), "Segoe UI", sans-serif;
+  --font-display: var(--font-bodoni), "Times New Roman", serif;
+  --font-script: var(--font-bodoni), "Times New Roman", serif;
+  --color-ink: #3d2433;
+  --color-cocoa: #6a3148;
+  --color-bark: #7a5362;
+  --color-sage: #e56b8a;
+  --color-sage-deep: #c44d72;
+  --color-moss: #3f6b62;
+  --color-foam: #ffe4ee;
+  --color-blush: #fff0f5;
+  --color-petal: #f3c3d2;
+  --color-line: #f3d5e0;
+  --color-sand: #fff7f9;
+  --color-muted: #8d6d7a;
+  --color-sale: #c44d72;
+  --color-brass: #d4a054;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at 0 0, #ffe4ee 0, transparent 32%),
+    radial-gradient(circle at 100% 0, #fff1d6 0, transparent 26%),
+    var(--color-sand);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: #f8c9d8;
+  color: #3d2433;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 3px;
+}
+
+.font-script {
+  font-style: italic;
+  font-weight: 500;
+}
+
+.sticker,
+.panel {
+  border: 1px solid var(--color-line);
+  background: white;
+  box-shadow: 0 22px 50px -32px rgba(196, 77, 114, 0.45);
+}
+
+.lift {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 28px 50px -28px rgba(196, 77, 114, 0.4);
+}
+
+.loop {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: white;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: var(--color-muted);
+  position: relative;
+  z-index: 1;
+}
+
+.loop-on {
+  border-color: var(--color-sage-deep);
+  background: var(--color-sage);
+  color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .lift, .lift:hover { transform: none; transition: none; }
+}
