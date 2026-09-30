@@ -2,9 +2,29 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { loginAdmin, loginCustomer, registerCustomer } from "@/actions/auth";
 import { Button, Field, controlClass } from "@/components/button";
+
+function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input {...props} type={visible ? "text" : "password"} className={`${controlClass} pr-12`} />
+      <button
+        type="button"
+        className="absolute top-1/2 right-3 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted transition hover:bg-blush hover:text-ink"
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => setVisible((current) => !current)}
+      >
+        {visible ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+      </button>
+    </div>
+  );
+}
 
 export function LoginForm({
   mode,
@@ -15,12 +35,6 @@ export function LoginForm({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const sample =
-    mode === "admin"
-      ? { email: "studio@cosycorner.shop", password: "CosyAdmin!2026", label: "Use the studio sample" }
-      : { email: "amina@cosycorner.shop", password: "CosyShop!2026", label: "Use the shopper sample" };
 
   return (
     <form
@@ -42,22 +56,12 @@ export function LoginForm({
     >
       <input name="company" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
       <Field label="Email">
-        <input name="email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={controlClass} />
+        <input name="email" type="email" required autoComplete="email" className={controlClass} />
       </Field>
       <Field label="Password">
-        <input name="password" type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={controlClass} />
+        <PasswordInput name="password" required autoComplete="current-password" />
       </Field>
       <Button disabled={pending}>{pending ? "Signing in…" : mode === "admin" ? "Open the desk" : "Sign in"}</Button>
-      <button
-        type="button"
-        className="text-left text-sm text-sage-deep underline"
-        onClick={() => {
-          setEmail(sample.email);
-          setPassword(sample.password);
-        }}
-      >
-        {sample.label}
-      </button>
     </form>
   );
 }
@@ -100,7 +104,7 @@ export function RegisterForm() {
         <input name="phone" autoComplete="tel" className={controlClass} />
       </Field>
       <Field label="Password" hint="At least 8 characters.">
-        <input name="password" type="password" required minLength={8} autoComplete="new-password" className={controlClass} />
+        <PasswordInput name="password" required minLength={8} autoComplete="new-password" />
       </Field>
       <Button disabled={pending}>{pending ? "Creating…" : "Create account"}</Button>
     </form>
