@@ -14,9 +14,22 @@ function databaseUrl() {
 
 export function getSql() {
   if (!client) {
-    client = postgres(databaseUrl(), { prepare: false, max: 1, idle_timeout: 20, connect_timeout: 10 });
+    client = postgres(databaseUrl(), {
+      prepare: false,
+      max: 1,
+      idle_timeout: 20,
+      connect_timeout: 10,
+      // The transaction pooler mixes pipelined queries and can omit columns such as created_at.
+      max_pipeline: 0,
+    });
   }
   return client;
+}
+
+function iso(value: Date | string | null | undefined) {
+  const date = value instanceof Date ? value : typeof value === "string" && value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return "1970-01-01T00:00:00.000Z";
+  return date.toISOString();
 }
 
 export async function fetchStore(): Promise<Store> {
@@ -50,7 +63,7 @@ export async function fetchStore(): Promise<Store> {
       role: user.role,
       phone: user.phone,
       city: user.city,
-      createdAt: user.created_at.toISOString(),
+      createdAt: iso(user.created_at),
       addresses: addresses
         .filter((address) => address.user_id === user.id)
         .map((address) => ({
@@ -84,7 +97,7 @@ export async function fetchStore(): Promise<Store> {
       active: product.active,
       yarn: product.yarn,
       imageUrl: product.image_url,
-      createdAt: product.created_at.toISOString(),
+      createdAt: iso(product.created_at),
     })),
     orders: orders.map((order) => ({
       id: order.id,
@@ -107,7 +120,7 @@ export async function fetchStore(): Promise<Store> {
       courier: order.courier,
       trackingCode: order.tracking_code,
       stockRestored: order.stock_restored,
-      createdAt: order.created_at.toISOString(),
+      createdAt: iso(order.created_at),
       items: items
         .filter((item) => item.order_id === order.id)
         .map((item) => ({
@@ -124,7 +137,7 @@ export async function fetchStore(): Promise<Store> {
           status: event.status,
           label: event.label,
           note: event.note,
-          at: event.at.toISOString(),
+          at: iso(event.at),
         })),
     })),
     reviews: reviews.map((review) => ({
@@ -135,7 +148,7 @@ export async function fetchStore(): Promise<Store> {
       city: review.city,
       rating: review.rating,
       text: review.body,
-      createdAt: review.created_at.toISOString(),
+      createdAt: iso(review.created_at),
     })),
     messages: messages.map((message) => ({
       id: message.id,
@@ -144,12 +157,12 @@ export async function fetchStore(): Promise<Store> {
       topic: message.topic,
       body: message.body,
       read: message.read,
-      createdAt: message.created_at.toISOString(),
+      createdAt: iso(message.created_at),
     })),
     subscribers: subscribers.map((subscriber) => ({
       id: subscriber.id,
       email: subscriber.email,
-      createdAt: subscriber.created_at.toISOString(),
+      createdAt: iso(subscriber.created_at),
     })),
     coupons: coupons.map((coupon) => ({
       code: coupon.code,
@@ -206,7 +219,7 @@ export async function fetchCatalog(): Promise<{
       active: product.active,
       yarn: product.yarn,
       imageUrl: product.image_url ?? "",
-      createdAt: product.created_at.toISOString(),
+      createdAt: iso(product.created_at),
     })),
     reviews: reviews.map((review) => ({
       id: review.id,
@@ -216,7 +229,7 @@ export async function fetchCatalog(): Promise<{
       city: review.city,
       rating: review.rating,
       text: review.body,
-      createdAt: review.created_at.toISOString(),
+      createdAt: iso(review.created_at),
     })),
   };
 }
@@ -237,7 +250,7 @@ export async function fetchUserById(id: string): Promise<User | null> {
     role: user.role,
     phone: user.phone,
     city: user.city,
-    createdAt: user.created_at.toISOString(),
+    createdAt: iso(user.created_at),
     addresses: addresses.map((address) => ({
       id: address.id,
       label: address.label,
