@@ -25,9 +25,9 @@ export function ProductRail({ products }: { products: Product[] }) {
         <ChevronLeft className="h-4 w-4" />
       </button>
       <div ref={scroller} className="rail flex snap-x gap-5 overflow-x-auto pb-4">
-        {products.map((product) => (
+        {products.map((product, index) => (
           <div key={product.id} className="w-[72%] shrink-0 snap-start sm:w-64">
-            <ProductCard product={product} />
+            <ProductCard product={product} eager={index < 2} />
           </div>
         ))}
       </div>

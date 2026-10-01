@@ -78,6 +78,16 @@ export function ReceiptSkeleton() {
   );
 }
 
+export function PhotoGridSkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6" aria-busy="true" aria-label="Loading pieces">
+      {Array.from({ length: count }, (_, index) => (
+        <div key={index} className="bone aspect-[4/5] rounded-3xl" />
+      ))}
+    </div>
+  );
+}
+
 export function CardGridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6" aria-busy="true" aria-label="Loading pieces">

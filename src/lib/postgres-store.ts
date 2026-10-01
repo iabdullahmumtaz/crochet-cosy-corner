@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import postgres from "postgres";
 import { themeId } from "@/lib/themes";
-import type { Store } from "@/lib/types";
+import type { Product, Review, ShopCategory, Store, User } from "@/lib/types";
 
 let client: ReturnType<typeof postgres> | null = null;
 
@@ -160,6 +160,106 @@ export async function fetchStore(): Promise<Store> {
       active: coupon.active,
     })),
   };
+}
+
+export async function fetchTheme() {
+  const sql = getSql();
+  const rows = await sql<{ value: string }[]>`select value from shop_meta where key = 'theme'`;
+  return themeId(rows[0]?.value);
+}
+
+export async function fetchCatalog(): Promise<{
+  categories: ShopCategory[];
+  products: Product[];
+  reviews: Review[];
+  whatsapp: string;
+}> {
+  const sql = getSql();
+  const [meta, categories, products, reviews] = await Promise.all([
+    sql<{ key: string; value: string }[]>`select key, value from shop_meta where key = 'whatsapp'`,
+    sql<{ id: string; label: string; blurb: string; motif: ShopCategory["motif"]; palette: ShopCategory["palette"]; image_url: string }[]>`select id, label, blurb, motif, palette, image_url from categories order by sort_order`,
+    sql<{ id: string; slug: string; name: string; description: string; price: number; compare_at: number | null; category: string; motif: Product["motif"]; palette: Product["palette"]; stock: number; featured: boolean; active: boolean; yarn: string; image_url: string; created_at: Date }[]>`select id, slug, name, description, price, compare_at, category, motif, palette, stock, featured, active, yarn, image_url, created_at from products order by created_at desc`,
+    sql<{ id: string; product_id: string | null; user_id: string | null; name: string; city: string; rating: number; body: string; created_at: Date }[]>`select id, product_id, user_id, name, city, rating, body, created_at from reviews order by created_at desc`,
+  ]);
+  return {
+    whatsapp: meta.find((row) => row.key === "whatsapp")?.value ?? "",
+    categories: categories.map((category) => ({
+      id: category.id,
+      label: category.label,
+      blurb: category.blurb,
+      motif: category.motif,
+      palette: category.palette,
+      imageUrl: category.image_url ?? "",
+    })),
+    products: products.map((product) => ({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      compareAt: product.compare_at,
+      category: product.category,
+      motif: product.motif,
+      palette: product.palette,
+      stock: product.stock,
+      featured: product.featured,
+      active: product.active,
+      yarn: product.yarn,
+      imageUrl: product.image_url ?? "",
+      createdAt: product.created_at.toISOString(),
+    })),
+    reviews: reviews.map((review) => ({
+      id: review.id,
+      productId: review.product_id,
+      userId: review.user_id,
+      name: review.name,
+      city: review.city,
+      rating: review.rating,
+      text: review.body,
+      createdAt: review.created_at.toISOString(),
+    })),
+  };
+}
+
+export async function fetchUserById(id: string): Promise<User | null> {
+  const sql = getSql();
+  const [users, addresses] = await Promise.all([
+    sql<{ id: string; name: string; email: string; password_hash: string; role: User["role"]; phone: string; city: string; created_at: Date }[]>`select id, name, email, password_hash, role, phone, city, created_at from users where id = ${id} limit 1`,
+    sql<{ id: string; label: string; line: string; city: string; phone: string }[]>`select id, label, line, city, phone from addresses where user_id = ${id}`,
+  ]);
+  const user = users[0];
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    passwordHash: user.password_hash,
+    role: user.role,
+    phone: user.phone,
+    city: user.city,
+    createdAt: user.created_at.toISOString(),
+    addresses: addresses.map((address) => ({
+      id: address.id,
+      label: address.label,
+      line: address.line,
+      city: address.city,
+      phone: address.phone,
+    })),
+  };
+}
+
+export async function hasDeliveredPiece(userId: string, productId: string) {
+  const sql = getSql();
+  const rows = await sql<{ id: string }[]>`
+    select orders.id
+    from orders
+    join order_items on order_items.order_id = orders.id
+    where orders.user_id = ${userId}
+      and orders.status = 'delivered'
+      and order_items.product_id = ${productId}
+    limit 1
+  `;
+  return rows.length > 0;
 }
 
 export async function writeStore(store: Store) {

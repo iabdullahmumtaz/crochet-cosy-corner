@@ -25,8 +25,12 @@ export function CardPhoto({
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={eager ? "high" : "auto"}
+        ref={(node) => {
+          if (node?.complete && node.naturalWidth > 0) setReady(true);
+        }}
         onLoad={() => setReady(true)}
-        className={cn("h-full w-full object-cover transition-opacity duration-300", ready ? "opacity-100" : "opacity-0")}
+        onError={() => setReady(true)}
+        className="relative h-full w-full object-cover"
       />
     </span>
   );

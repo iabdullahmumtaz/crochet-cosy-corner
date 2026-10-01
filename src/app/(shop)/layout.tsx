@@ -4,17 +4,19 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { WhatsAppChat } from "@/components/whatsapp-chat";
 import { getCurrentUser } from "@/lib/auth";
-import { readStore } from "@/lib/db";
+import { readCatalog } from "@/lib/db";
+import { CATEGORIES } from "@/lib/domain";
+
+const headerCategories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
 
 async function ShopHeader() {
   const user = await getCurrentUser();
-  const store = await readStore();
-  return <Header user={user} categories={store.categories ?? []} />;
+  return <Header user={user} categories={headerCategories} />;
 }
 
 async function ShopWhatsApp() {
-  const store = await readStore();
-  return <WhatsAppChat number={store.whatsapp ?? ""} />;
+  const catalog = await readCatalog();
+  return <WhatsAppChat number={catalog.whatsapp ?? ""} />;
 }
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {

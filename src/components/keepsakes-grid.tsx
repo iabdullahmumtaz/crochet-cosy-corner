@@ -4,14 +4,14 @@ import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { useCart } from "@/components/cart-provider";
 import { buttonClass } from "@/components/button";
-import { CardGridSkeleton } from "@/components/skeleton";
+import { PhotoGridSkeleton } from "@/components/skeleton";
 import type { Product } from "@/lib/types";
 
 export function KeepsakesGrid({ products }: { products: Product[] }) {
   const { keepsakes, ready } = useCart();
   const saved = products.filter((product) => keepsakes.includes(product.id));
 
-  if (!ready) return <CardGridSkeleton />;
+  if (!ready) return <PhotoGridSkeleton count={4} />;
 
   if (saved.length === 0) {
     return (

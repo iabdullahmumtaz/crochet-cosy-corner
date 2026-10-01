@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { NewsletterForm } from "@/components/newsletter-form";
-import { readStore } from "@/lib/db";
+import { CATEGORIES } from "@/lib/domain";
 
-export async function Footer() {
-  const store = await readStore();
-  const categories = store.categories ?? [];
+const categories = CATEGORIES;
+
+export function Footer() {
 
   return (
     <footer className="mt-16 border-t border-line bg-white text-ink">

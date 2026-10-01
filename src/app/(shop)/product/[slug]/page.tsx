@@ -9,7 +9,7 @@ import { RecentPieces, RememberPiece } from "@/components/recent-pieces";
 import { ReviewForm } from "@/components/review-form";
 import { getCurrentUser } from "@/lib/auth";
 import { categoryLabel } from "@/lib/domain";
-import { readStore } from "@/lib/db";
+import { buyerReceived, readCatalog } from "@/lib/db";
 import { formatRs, percentOff } from "@/lib/format";
 
 export async function generateMetadata({
@@ -18,29 +18,24 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const store = await readStore();
-  const product = store.products.find((item) => item.slug === slug && item.active);
+  const catalog = await readCatalog();
+  const product = catalog.products.find((item) => item.slug === slug && item.active);
   return { title: product?.name ?? "Piece" };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const store = await readStore();
-  const product = store.products.find((item) => item.slug === slug && item.active);
+  const catalog = await readCatalog();
+  const product = catalog.products.find((item) => item.slug === slug && item.active);
   if (!product) notFound();
   const off = percentOff(product.price, product.compareAt);
-  const related = store.products.filter((item) => item.active && item.category === product.category && item.id !== product.id).slice(0, 4);
-  const reviews = store.reviews.filter((review) => review.productId === product.id);
+  const related = catalog.products.filter((item) => item.active && item.category === product.category && item.id !== product.id).slice(0, 4);
+  const reviews = catalog.reviews.filter((review) => review.productId === product.id);
   const user = await getCurrentUser();
   const canReview = Boolean(
     user?.role === "customer" &&
-      store.orders.some(
-        (order) =>
-          order.userId === user.id &&
-          order.status === "delivered" &&
-          order.items.some((item) => item.productId === product.id),
-      ) &&
-      !reviews.some((review) => review.userId === user.id),
+      !reviews.some((review) => review.userId === user.id) &&
+      (await buyerReceived(user.id, product.id)),
   );
 
   return (
@@ -49,7 +44,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <p className="text-sm text-muted">
         <Link href="/shop" className="hover:text-sage-deep">Shop</Link>
         <span> / </span>
-        <Link href={`/shop?category=${product.category}`} className="hover:text-sage-deep">{categoryLabel(product.category, store.categories)}</Link>
+        <Link href={`/shop?category=${product.category}`} className="hover:text-sage-deep">{categoryLabel(product.category, catalog.categories)}</Link>
       </p>
       <div className="mt-6 grid items-start gap-10 lg:grid-cols-2">
         <div className="panel overflow-hidden rounded-[28px]">
@@ -73,7 +68,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p className="mt-5 max-w-lg leading-7 text-muted">{product.description}</p>
           <dl className="mt-6 grid gap-2 text-sm">
             <div className="flex gap-3"><dt className="w-24 text-muted">Yarn</dt><dd>{product.yarn}</dd></div>
-            <div className="flex gap-3"><dt className="w-24 text-muted">Collection</dt><dd>{categoryLabel(product.category, store.categories)}</dd></div>
+            <div className="flex gap-3"><dt className="w-24 text-muted">Collection</dt><dd>{categoryLabel(product.category, catalog.categories)}</dd></div>
             <div className="flex gap-3">
               <dt className="w-24 text-muted">Shelf</dt>
               <dd>{product.stock === 0 ? "Sold out" : product.stock <= 3 ? `Only ${product.stock} left` : `${product.stock} ready to make`}</dd>
@@ -104,7 +99,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <RecentPieces current={product.slug} />
       {related.length > 0 ? (
         <section className="mt-14">
-          <h2 className="font-display text-3xl text-bark">More in {categoryLabel(product.category, store.categories)}</h2>
+          <h2 className="font-display text-3xl text-bark">More in {categoryLabel(product.category, catalog.categories)}</h2>
           <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             {related.map((item) => (
               <ProductCard key={item.id} product={item} />

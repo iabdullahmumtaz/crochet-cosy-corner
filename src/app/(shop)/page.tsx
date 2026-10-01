@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { HeroCards, HeroCardSkeleton, HomeCatalog } from "@/components/home-catalog";
-import { CardGridSkeleton } from "@/components/skeleton";
+import { CategoryMarks, CategoryPhotos, CategoryRail, HeroArt, HeroCards, HomeNotes, RailSkeleton } from "@/components/home-catalog";
 import { buttonClass } from "@/components/button";
+import { CATEGORIES } from "@/lib/domain";
 
 export default function HomePage() {
   return (
@@ -22,12 +22,31 @@ export default function HomePage() {
             <Link href="/faq" className={buttonClass("ghost")}>How an order moves</Link>
           </div>
         </div>
-        <Suspense fallback={<HeroCardSkeleton />}>
+        <Suspense fallback={<HeroArt />}>
           <HeroCards />
         </Suspense>
       </section>
-      <Suspense fallback={<div className="mx-auto max-w-6xl px-5 py-12"><CardGridSkeleton count={4} /></div>}>
-        <HomeCatalog />
+      <Suspense fallback={<CategoryMarks />}>
+        <CategoryPhotos />
+      </Suspense>
+      {CATEGORIES.map((category, index) => (
+        <section key={category.id} className="mx-auto max-w-6xl px-5 py-12">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="hero-rise font-display text-3xl font-medium text-ink sm:text-4xl" style={{ animationDelay: `${80 + index * 30}ms` }}>{category.label}</h2>
+              <p className="hero-rise mt-2 max-w-xl text-sm leading-6 text-muted" style={{ animationDelay: `${140 + index * 30}ms` }}>{category.blurb}</p>
+            </div>
+            <Link href={`/shop?category=${category.id}`} className="shrink-0 text-sm text-sage underline decoration-petal underline-offset-4">
+              View all
+            </Link>
+          </div>
+          <Suspense fallback={<RailSkeleton />}>
+            <CategoryRail id={category.id} />
+          </Suspense>
+        </section>
+      ))}
+      <Suspense fallback={null}>
+        <HomeNotes />
       </Suspense>
     </div>
   );

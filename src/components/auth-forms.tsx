@@ -105,7 +105,7 @@ export function RegisterForm() {
           return;
         }
         if ("verify" in result && result.verify) {
-          toast.success("Check your email", { description: "Open the confirmation link, then sign in." });
+          toast.success("Check your email");
           router.push("/login");
           return;
         }

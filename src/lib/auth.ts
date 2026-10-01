@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import { readStore } from "@/lib/db";
+import { readUser } from "@/lib/db";
 import {
   RECEIPT_COOKIE,
   SESSION_COOKIE,
@@ -39,8 +39,7 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
   const jar = await cookies();
   const token = await verifyToken(jar.get(SESSION_COOKIE)?.value);
   if (!token || token.kind !== "session") return null;
-  const store = await readStore();
-  const user = store.users.find((item) => item.id === token.uid);
+  const user = await readUser(token.uid);
   if (!user || user.role !== token.role) return null;
   return toPublicUser(user);
 }

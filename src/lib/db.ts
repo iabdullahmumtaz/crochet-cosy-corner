@@ -4,8 +4,8 @@ import { defaultCoupons } from "@/lib/coupons";
 import { CATEGORIES } from "@/lib/domain";
 import { themeId } from "@/lib/themes";
 import { createSeed } from "@/lib/seed";
-import { fetchStore, readLocalSnapshot, writeStore } from "@/lib/postgres-store";
-import type { Store } from "@/lib/types";
+import { fetchCatalog, fetchStore, fetchTheme, fetchUserById, hasDeliveredPiece, readLocalSnapshot, writeStore } from "@/lib/postgres-store";
+import type { Store, User } from "@/lib/types";
 
 let memory: Store | null = null;
 let loading: Promise<Store> | null = null;
@@ -50,6 +50,45 @@ export const readStore = cache(async () => {
   const store = await load();
   hydrate(store);
   return structuredClone(store);
+});
+
+export const readTheme = cache(async () => {
+  if (memory) return themeId(memory.theme);
+  return fetchTheme();
+});
+
+export const readCatalog = cache(async () => {
+  if (memory) {
+    hydrate(memory);
+    return {
+      categories: memory.categories,
+      products: memory.products,
+      reviews: memory.reviews,
+      whatsapp: memory.whatsapp ?? "",
+    };
+  }
+  const catalog = await fetchCatalog();
+  if (!catalog.categories.length) {
+    catalog.categories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
+  }
+  return catalog;
+});
+
+export async function buyerReceived(userId: string, productId: string) {
+  if (memory) {
+    return memory.orders.some(
+      (order) =>
+        order.userId === userId &&
+        order.status === "delivered" &&
+        order.items.some((item) => item.productId === productId),
+    );
+  }
+  return hasDeliveredPiece(userId, productId);
+}
+
+export const readUser = cache(async (id: string): Promise<User | null> => {
+  if (memory) return memory.users.find((user) => user.id === id) ?? null;
+  return fetchUserById(id);
 });
 
 export async function updateStore<T>(mutator: (store: Store) => T): Promise<T> {

@@ -166,7 +166,8 @@ export function CartProvider({ children, photos = [] }: { children: React.ReactN
         closeButton
         offset={12}
         duration={2600}
-        style={{ ["--width" as string]: "260px" }}
+        icons={{ success: null, error: null, info: null, warning: null, loading: null }}
+        style={{ ["--width" as string]: "360px" }}
         toastOptions={{
           classNames: {
             toast: "cosy-toast",

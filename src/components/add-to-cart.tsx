@@ -8,7 +8,7 @@ import { Button } from "@/components/button";
 import type { Product } from "@/lib/types";
 
 export function AddToCart({ product }: { product: Product }) {
-  const { add, items, setOpen } = useCart();
+  const { add, items } = useCart();
   const [qty, setQty] = useState(1);
   const inBasket = items.find((item) => item.productId === product.id)?.qty ?? 0;
 
@@ -47,10 +47,7 @@ export function AddToCart({ product }: { product: Product }) {
           });
           if (result === "max") toast.error("You can keep up to 5 of this piece.");
           else {
-            toast.success(result === "updated" ? "Updated your basket" : "Added to your basket", {
-              description: product.name,
-              action: { label: "View", onClick: () => setOpen(true) },
-            });
+            toast.success(result === "updated" ? "Updated your basket" : "Added to your basket");
           }
         }}
       >

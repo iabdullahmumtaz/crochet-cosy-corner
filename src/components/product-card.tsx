@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { CardPhoto } from "@/components/card-photo";
@@ -10,9 +9,8 @@ import { useCart } from "@/components/cart-provider";
 import { formatRs, percentOff } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
-export function ProductCard({ product }: { product: Product }) {
-  const router = useRouter();
-  const { add, toggleKeep, keepsakes, setOpen } = useCart();
+export function ProductCard({ product, eager = false }: { product: Product; eager?: boolean }) {
+  const { add, toggleKeep, keepsakes } = useCart();
   const saved = keepsakes.includes(product.id);
   const off = percentOff(product.price, product.compareAt);
 
@@ -33,10 +31,7 @@ export function ProductCard({ product }: { product: Product }) {
     });
     if (result === "max") toast.error("You can keep up to 5 of this piece.");
     else {
-      toast.success(result === "updated" ? "Updated your basket" : "Added to your basket", {
-        description: product.name,
-        action: { label: "View", onClick: () => setOpen(true) },
-      });
+      toast.success(result === "updated" ? "Updated your basket" : "Added to your basket");
     }
   }
 
@@ -49,10 +44,7 @@ export function ProductCard({ product }: { product: Product }) {
         className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/70 bg-white/90 text-bark backdrop-blur-sm transition hover:bg-white"
         onClick={() => {
           const nowSaved = toggleKeep(product.id);
-          toast.success(nowSaved ? "Saved to keepsakes" : "Removed from keepsakes", {
-            description: product.name,
-            action: nowSaved ? { label: "Open", onClick: () => router.push("/keepsakes") } : undefined,
-          });
+          toast.success(nowSaved ? "Saved to keepsakes" : "Removed from keepsakes");
         }}
       >
         <Heart className={`h-4 w-4 ${saved ? "fill-sale text-sale" : ""}`} />
@@ -61,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
         <Link href={`/product/${product.slug}`} className="block">
           <div className="motion-safe:transition motion-safe:duration-700 motion-safe:group-hover:scale-[1.04]">
             {product.imageUrl ? (
-              <CardPhoto src={product.imageUrl} className="aspect-[4/5] w-full" />
+              <CardPhoto src={product.imageUrl} eager={eager} className="aspect-[4/5] w-full" />
             ) : (
               <ProductArt motif={product.motif} palette={product.palette} />
             )}

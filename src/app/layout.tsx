@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Manrope } from "next/font/google";
 import { CartProvider } from "@/components/cart-provider";
-import { readStore } from "@/lib/db";
-import { themeId } from "@/lib/themes";
+import { readTheme } from "@/lib/db";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -26,16 +25,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const store = await readStore();
-  const photos = store.products.map((product) => ({
-    id: product.id,
-    slug: product.slug,
-    imageUrl: product.imageUrl,
-  }));
+  const theme = await readTheme();
   return (
-    <html lang="en" data-theme={themeId(store.theme)} data-scroll-behavior="smooth" className={`${manrope.variable} ${bodoni.variable} h-full antialiased`}>
+    <html lang="en" data-theme={theme} data-scroll-behavior="smooth" className={`${manrope.variable} ${bodoni.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <CartProvider photos={photos}>{children}</CartProvider>
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );
