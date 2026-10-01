@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
-import { PhotoGridSkeleton } from "@/components/skeleton";
+import { CardGridSkeleton } from "@/components/skeleton";
 import { buttonClass, controlClass } from "@/components/button";
 import { readCatalog } from "@/lib/db";
 import { CATEGORIES, categoryLabel } from "@/lib/domain";
@@ -113,7 +113,7 @@ async function ShopGrid({ searchParams }: { searchParams: Promise<ShopQuery> }) 
       ) : (
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
           {filtered.map((product, index) => (
-            <ProductCard key={product.id} product={product} eager={index < 4} />
+            <ProductCard key={product.id} product={product} eager={index < 4} delay={index * 50} />
           ))}
         </div>
       )}
@@ -137,7 +137,7 @@ export default function ShopPage({ searchParams }: { searchParams: Promise<ShopQ
       >
         <ShopHeading searchParams={searchParams} />
       </Suspense>
-      <Suspense fallback={<div className="mt-6"><PhotoGridSkeleton count={8} /></div>}>
+      <Suspense fallback={<div className="mt-6"><CardGridSkeleton count={8} /></div>}>
         <ShopGrid searchParams={searchParams} />
       </Suspense>
     </div>

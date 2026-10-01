@@ -7,27 +7,16 @@ import type { Product, Review, ShopCategory, Store, User } from "@/lib/types";
 let client: ReturnType<typeof postgres> | null = null;
 
 function databaseUrl() {
-  const url = process.env.DIRECT_URL || process.env.DATABASE_URL;
+  const url = process.env.DATABASE_URL || process.env.DIRECT_URL;
   if (!url) throw new Error("DATABASE_URL is missing");
   return url;
 }
 
 export function getSql() {
   if (!client) {
-    client = postgres(databaseUrl(), { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 20 });
+    client = postgres(databaseUrl(), { prepare: false, max: 1, idle_timeout: 20, connect_timeout: 10 });
   }
   return client;
-}
-
-export async function resetSql() {
-  const current = client;
-  client = null;
-  if (!current) return;
-  try {
-    await current.end({ timeout: 1 });
-  } catch {
-    // The pool is already closed.
-  }
 }
 
 export async function fetchStore(): Promise<Store> {

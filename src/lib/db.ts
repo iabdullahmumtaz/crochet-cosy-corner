@@ -4,7 +4,7 @@ import { defaultCoupons } from "@/lib/coupons";
 import { CATEGORIES } from "@/lib/domain";
 import { themeId } from "@/lib/themes";
 import { createSeed } from "@/lib/seed";
-import { fetchCatalog, fetchStore, fetchTheme, fetchUserById, hasDeliveredPiece, readLocalSnapshot, resetSql, writeStore } from "@/lib/postgres-store";
+import { fetchCatalog, fetchStore, fetchTheme, fetchUserById, hasDeliveredPiece, readLocalSnapshot, writeStore } from "@/lib/postgres-store";
 import type { Store, User } from "@/lib/types";
 
 let memory: Store | null = null;
@@ -61,40 +61,50 @@ export const readTheme = cache(async () => {
   try {
     return await readThemeOnce();
   } catch {
-    await resetSql();
-    try {
-      return await readThemeOnce();
-    } catch {
-      return "blush" as const;
-    }
+    return "blush" as const;
   }
 });
 
-async function readCatalogOnce() {
-  if (memory) {
-    hydrate(memory);
-    return {
-      categories: memory.categories,
-      products: memory.products,
-      reviews: memory.reviews,
-      whatsapp: memory.whatsapp ?? "",
-    };
-  }
-  const catalog = await fetchCatalog();
-  if (!catalog.categories.length) {
-    catalog.categories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
-  }
-  return catalog;
+type CatalogSlice = {
+  categories: Store["categories"];
+  products: Store["products"];
+  reviews: Store["reviews"];
+  whatsapp: string;
+};
+
+let catalogCache: CatalogSlice | null = null;
+let catalogFlight: Promise<CatalogSlice> | null = null;
+
+function catalogFromMemory(): CatalogSlice {
+  hydrate(memory!);
+  return {
+    categories: memory!.categories,
+    products: memory!.products,
+    reviews: memory!.reviews,
+    whatsapp: memory!.whatsapp ?? "",
+  };
 }
 
-export const readCatalog = cache(async () => {
-  try {
-    return await readCatalogOnce();
-  } catch {
-    await resetSql();
-    return readCatalogOnce();
+async function loadCatalog(): Promise<CatalogSlice> {
+  if (memory) return catalogFromMemory();
+  if (catalogCache) return catalogCache;
+  if (!catalogFlight) {
+    catalogFlight = fetchCatalog()
+      .then((catalog) => {
+        if (!catalog.categories.length) {
+          catalog.categories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
+        }
+        catalogCache = catalog;
+        return catalog;
+      })
+      .finally(() => {
+        catalogFlight = null;
+      });
   }
-});
+  return catalogFlight;
+}
+
+export const readCatalog = cache(async () => loadCatalog());
 
 export async function buyerReceived(userId: string, productId: string) {
   if (memory) {
@@ -119,6 +129,7 @@ export async function updateStore<T>(mutator: (store: Store) => T): Promise<T> {
     hydrate(store);
     const result = mutator(store);
     memory = store;
+    catalogCache = null;
     await writeStore(store);
     return result;
   });

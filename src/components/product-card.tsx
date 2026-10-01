@@ -9,7 +9,7 @@ import { useCart } from "@/components/cart-provider";
 import { formatRs, percentOff } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
-export function ProductCard({ product, eager = false }: { product: Product; eager?: boolean }) {
+export function ProductCard({ product, eager = false, delay = 0 }: { product: Product; eager?: boolean; delay?: number }) {
   const { add, toggleKeep, keepsakes } = useCart();
   const saved = keepsakes.includes(product.id);
   const off = percentOff(product.price, product.compareAt);
@@ -36,7 +36,7 @@ export function ProductCard({ product, eager = false }: { product: Product; eage
   }
 
   return (
-    <article className="group relative">
+    <article className="card-rise group relative" style={{ animationDelay: `${delay}ms` }}>
       <button
         type="button"
         aria-pressed={saved}

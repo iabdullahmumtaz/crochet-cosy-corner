@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { CategoryMarks, CategoryPhotos, CategoryRail, HeroArt, HeroCards, HomeNotes, RailSkeleton } from "@/components/home-catalog";
+import { CategoryMarks, CategoryPhotos, CategoryRail, HeroCards, HeroSkeleton, HomeNotes, RailSkeleton } from "@/components/home-catalog";
 import { buttonClass } from "@/components/button";
 import { CATEGORIES } from "@/lib/domain";
 
@@ -22,7 +22,7 @@ export default function HomePage() {
             <Link href="/faq" className={buttonClass("ghost")}>How an order moves</Link>
           </div>
         </div>
-        <Suspense fallback={<HeroArt />}>
+        <Suspense fallback={<HeroSkeleton />}>
           <HeroCards />
         </Suspense>
       </section>

@@ -9,8 +9,8 @@ import type { ShopCategory } from "@/lib/types";
 function marks(categories: ShopCategory[]) {
   return (
     <div className="rail center-row mx-auto flex max-w-6xl gap-5 overflow-x-auto px-5 py-6">
-      {categories.map((category) => (
-        <Link key={category.id} href={`/shop?category=${category.id}`} className="group w-24 shrink-0 text-center sm:w-28">
+      {categories.map((category, index) => (
+        <Link key={category.id} href={`/shop?category=${category.id}`} className="card-rise group w-24 shrink-0 text-center sm:w-28" style={{ animationDelay: `${index * 50}ms` }}>
           <span className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-full border border-line bg-foam transition duration-300 group-hover:-translate-y-1 sm:h-24 sm:w-24">
             {category.imageUrl ? (
               <CardPhoto src={category.imageUrl} eager className="h-full w-full" />
@@ -26,7 +26,18 @@ function marks(categories: ShopCategory[]) {
 }
 
 export function CategoryMarks() {
-  return <section className="border-y border-line bg-white">{marks(CATEGORIES.map((category) => ({ ...category, imageUrl: "" })))}</section>;
+  return (
+    <section className="border-y border-line bg-white" aria-hidden>
+      <div className="rail center-row mx-auto flex max-w-6xl gap-5 overflow-x-auto px-5 py-6">
+        {CATEGORIES.map((category) => (
+          <div key={category.id} className="w-24 shrink-0 text-center sm:w-28">
+            <span className="bone mx-auto block h-20 w-20 rounded-full sm:h-24 sm:w-24" />
+            <span className="mt-2 block text-sm text-ink">{category.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export async function CategoryPhotos() {
@@ -34,15 +45,14 @@ export async function CategoryPhotos() {
   return <section className="border-y border-line bg-white">{marks(catalog.categories.length ? catalog.categories : CATEGORIES.map((category) => ({ ...category, imageUrl: "" })))}</section>;
 }
 
-export function HeroArt() {
-  const hero = CATEGORIES.slice(0, 4);
+export function HeroSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {hero.map((category, index) => (
-        <Link key={category.id} href={`/shop?category=${category.id}`} className="panel lift overflow-hidden rounded-3xl" style={{ animationDelay: `${index * 70}ms` }}>
-          <ProductArt motif={category.motif} palette={category.palette} className="aspect-[4/5]" />
+    <div className="grid grid-cols-2 gap-4" aria-hidden>
+      {CATEGORIES.slice(0, 4).map((category) => (
+        <div key={category.id} className="overflow-hidden rounded-3xl border border-line bg-white">
+          <div className="bone aspect-[4/5] w-full" />
           <p className="px-4 py-3 text-center font-display text-xl text-ink">{category.label}</p>
-        </Link>
+        </div>
       ))}
     </div>
   );
@@ -55,7 +65,7 @@ export async function HeroCards() {
   return (
     <div className="grid grid-cols-2 gap-4">
       {hero.map((category, index) => (
-        <Link key={category.id} href={`/shop?category=${category.id}`} className="panel lift hero-rise overflow-hidden rounded-3xl" style={{ animationDelay: `${index * 70}ms` }}>
+        <Link key={category.id} href={`/shop?category=${category.id}`} className="panel lift card-rise overflow-hidden rounded-3xl" style={{ animationDelay: `${index * 70}ms` }}>
           {category.imageUrl ? (
             <CardPhoto src={category.imageUrl} eager className="aspect-[4/5] w-full" />
           ) : (
@@ -72,7 +82,11 @@ export function RailSkeleton() {
   return (
     <div className="flex gap-5 overflow-hidden" aria-hidden>
       {Array.from({ length: 4 }, (_, index) => (
-        <div key={index} className="bone aspect-[4/5] w-[72%] shrink-0 rounded-3xl sm:w-64" />
+        <div key={index} className="w-[72%] shrink-0 sm:w-64">
+          <div className="bone aspect-[4/5] w-full rounded-3xl" />
+          <div className="bone mt-4 h-5 w-3/4 rounded-full" />
+          <div className="bone mt-2 h-4 w-1/3 rounded-full" />
+        </div>
       ))}
     </div>
   );

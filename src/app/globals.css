@@ -294,8 +294,9 @@ body {
   }
 }
 
-.hero-rise {
-  animation: hero-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+.hero-rise,
+.card-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes hero-rise {
@@ -313,5 +314,5 @@ body {
   html { scroll-behavior: auto; }
   .lift, .lift:hover { transform: none; transition: none; }
   .bone { animation: none; }
-  .hero-rise { animation: none; }
+  .hero-rise, .card-rise { animation: none; }
 }
