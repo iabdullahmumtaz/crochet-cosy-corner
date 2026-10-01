@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCart } from "@/components/add-to-cart";
+import { CardPhoto } from "@/components/card-photo";
 import { ProductArt } from "@/components/product-art";
 import { ProductCard } from "@/components/product-card";
 import { RecentPieces, RememberPiece } from "@/components/recent-pieces";
@@ -53,7 +54,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <div className="mt-6 grid items-start gap-10 lg:grid-cols-2">
         <div className="panel overflow-hidden rounded-[28px]">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt="" className="aspect-[4/5] w-full object-cover" />
+            <CardPhoto src={product.imageUrl} eager className="aspect-[4/5] w-full" />
           ) : (
             <ProductArt motif={product.motif} palette={product.palette} />
           )}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
+import { CardPhoto } from "@/components/card-photo";
 import { ProductArt } from "@/components/product-art";
 import { useCart } from "@/components/cart-provider";
 import { formatRs, percentOff } from "@/lib/format";
@@ -28,6 +29,7 @@ export function ProductCard({ product }: { product: Product }) {
       qty: 1,
       motif: product.motif,
       palette: product.palette,
+      imageUrl: product.imageUrl,
     });
     if (result === "max") toast.error("You can keep up to 5 of this piece.");
     else {
@@ -59,7 +61,7 @@ export function ProductCard({ product }: { product: Product }) {
         <Link href={`/product/${product.slug}`} className="block">
           <div className="motion-safe:transition motion-safe:duration-700 motion-safe:group-hover:scale-[1.04]">
             {product.imageUrl ? (
-              <img src={product.imageUrl} alt="" className="aspect-[4/5] h-full w-full object-cover" />
+              <CardPhoto src={product.imageUrl} className="aspect-[4/5] w-full" />
             ) : (
               <ProductArt motif={product.motif} palette={product.palette} />
             )}
@@ -78,7 +80,7 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <Link href={`/product/${product.slug}`} className="mt-4 block">
-        <h3 className="font-display text-xl leading-tight text-ink">{product.name}</h3>
+        <h3 className="font-display text-lg leading-tight break-words text-ink sm:text-xl">{product.name}</h3>
         <p className="mt-1.5 text-sm text-bark">
           <span>{formatRs(product.price)}</span>
           {product.compareAt && off ? (

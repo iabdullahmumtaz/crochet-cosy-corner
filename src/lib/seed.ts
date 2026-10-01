@@ -181,7 +181,7 @@ export function createSeed(): Store {
     password: "CosyAdmin!2026",
     role: "admin",
     phone: "",
-    city: "Karachi",
+    city: "Lahore",
     createdAt: "2026-08-01T08:00:00.000Z",
   });
 
@@ -267,7 +267,7 @@ export function createSeed(): Store {
         userId: customer.id,
         productId: bySlug("bunny-with-a-heart"),
         name: "Hina",
-        city: "Karachi",
+        city: "Lahore",
         rating: 5,
         text: "Ordered the bunny for my sister. Tracking was clear, and the box smelled like a yarn shop.",
         createdAt: "2026-09-19T12:00:00.000Z",
@@ -307,6 +307,7 @@ export function createSeed(): Store {
     coupons: defaultCoupons(),
     categories: CATEGORIES.map((category) => ({ ...category, imageUrl: "" })),
     whatsapp: "",
+    theme: "blush",
     subscribers: [
       {
         id: crypto.randomUUID(),

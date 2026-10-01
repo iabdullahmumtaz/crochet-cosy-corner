@@ -4,7 +4,7 @@ import { formatRs, formatWhenTime } from "@/lib/format";
 import { PAYMENTS } from "@/lib/domain";
 import type { Order } from "@/lib/types";
 
-export function OrderPanel({ order, children }: { order: Order; children?: React.ReactNode }) {
+export function OrderPanel({ order, children, productLinks }: { order: Order; children?: React.ReactNode; productLinks?: Record<string, string> }) {
   const payment = PAYMENTS.find((item) => item.id === order.payment)?.label ?? order.payment;
   return (
     <div className="grid gap-8 lg:grid-cols-[1.15fr_.85fr]">
@@ -26,7 +26,14 @@ export function OrderPanel({ order, children }: { order: Order; children?: React
           <ul className="mt-3 space-y-2 text-sm">
             {order.items.map((item) => (
               <li key={`${item.productId}-${item.name}`} className="flex justify-between gap-3">
-                <span>{item.name} × {item.qty}</span>
+                <span>
+                  {productLinks?.[item.productId] ? (
+                    <Link href={productLinks[item.productId]} className="hover:underline">{item.name}</Link>
+                  ) : (
+                    item.name
+                  )}{" "}
+                  × {item.qty}
+                </span>
                 <span>{formatRs(item.lineTotal)}</span>
               </li>
             ))}

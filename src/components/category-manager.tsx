@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteCategory, saveCategory, uploadDeskImage } from "@/actions/admin";
+import { CardPhoto } from "@/components/card-photo";
 import { Button, Field, controlClass } from "@/components/button";
 import { MOTIFS, PALETTE_IDS } from "@/lib/domain";
 import type { ShopCategory } from "@/lib/types";
@@ -16,33 +17,54 @@ export function CategoryManager({ categories }: { categories: ShopCategory[] }) 
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-      <ul className="space-y-3">
-        {categories.map((category) => (
-          <li key={category.id} className="flex flex-wrap items-start justify-between gap-3 rounded-3xl border border-line bg-white px-4 py-4">
-            <span>
-              <span className="block font-display text-2xl text-ink">{category.label}</span>
-              <span className="text-sm text-muted">{category.blurb}</span>
-            </span>
-            <span className="flex gap-3 text-sm">
-              <button type="button" className="font-medium text-sage-deep" onClick={() => setEditing(category.id)}>Edit</button>
-              <button
-                type="button"
-                className="font-medium text-sale"
-                onClick={async () => {
-                  const result = await deleteCategory(category.id);
-                  if (!result.ok) toast.error(result.error);
-                  else {
-                    toast.success("Collection removed");
-                    router.refresh();
-                  }
-                }}
-              >
-                Delete
-              </button>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="overflow-x-auto rounded-[28px] border border-line bg-white">
+        <table className="stack w-full text-left text-sm md:min-w-[520px]">
+          <thead className="text-muted">
+            <tr>
+              <th className="px-4 py-3 font-medium">Collection</th>
+              <th className="px-4 py-3 font-medium"> </th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.map((category) => (
+              <tr key={category.id} className="border-t border-line">
+                <td className="px-4 py-2">
+                  <span className="flex items-center gap-3">
+                    {category.imageUrl ? (
+                      <CardPhoto src={category.imageUrl} className="h-14 w-14 shrink-0 rounded-full" />
+                    ) : (
+                      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-foam text-[10px] text-muted">None</span>
+                    )}
+                    <span>
+                      <span className="block text-ink">{category.label}</span>
+                      <span className="text-muted">{category.blurb}</span>
+                    </span>
+                  </span>
+                </td>
+                <td data-label="" className="px-4 py-2">
+                  <span className="flex justify-end gap-3 md:justify-end">
+                    <button type="button" className="font-medium text-sage-deep" onClick={() => setEditing(category.id)}>Edit</button>
+                    <button
+                      type="button"
+                      className="font-medium text-sale"
+                      onClick={async () => {
+                        const result = await deleteCategory(category.id);
+                        if (!result.ok) toast.error(result.error);
+                        else {
+                          toast.success("Collection removed");
+                          router.refresh();
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <form
         key={current?.id ?? "new"}
         className="panel grid h-fit gap-3 rounded-3xl p-5"

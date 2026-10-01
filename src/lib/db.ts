@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { defaultCoupons } from "@/lib/coupons";
 import { CATEGORIES } from "@/lib/domain";
+import { themeId } from "@/lib/themes";
 import { createSeed } from "@/lib/seed";
 import { fetchStore, readLocalSnapshot, writeStore } from "@/lib/postgres-store";
 import type { Store } from "@/lib/types";
@@ -22,6 +23,7 @@ function hydrate(store: Store) {
   for (const product of store.products) product.imageUrl ??= "";
   for (const category of store.categories) category.imageUrl ??= "";
   store.whatsapp ??= "";
+  store.theme = themeId(store.theme);
   return store;
 }
 

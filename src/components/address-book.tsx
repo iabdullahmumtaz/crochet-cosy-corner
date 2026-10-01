@@ -65,7 +65,7 @@ export function AddressBook({ addresses }: { addresses: SavedAddress[] }) {
           <input name="line" required className={controlClass} />
         </Field>
         <Field label="City">
-          <select name="city" className={controlClass} defaultValue="Karachi">
+          <select name="city" className={controlClass} defaultValue="Lahore">
             {CITIES.map((city) => <option key={city}>{city}</option>)}
           </select>
         </Field>

@@ -5,8 +5,7 @@ import Link from "next/link";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { quoteCart } from "@/actions/shop";
-import { ProductArt } from "@/components/product-art";
-import { useCart } from "@/components/cart-provider";
+import { BasketPhoto, useCart } from "@/components/cart-provider";
 import { buttonClass } from "@/components/button";
 import { FREE_DELIVERY } from "@/lib/domain";
 import { formatRs } from "@/lib/format";
@@ -52,8 +51,8 @@ export function CartView() {
           const priced = lines?.find((line) => line.productId === item.productId);
           return (
             <li key={item.productId} className="flex gap-4 rounded-3xl border border-line bg-white p-3">
-              <Link href={`/product/${item.slug}`} className="w-24 shrink-0 overflow-hidden rounded-2xl">
-                <ProductArt motif={item.motif} palette={item.palette} />
+              <Link href={`/product/${item.slug}`} className="w-24 shrink-0 overflow-hidden rounded-2xl bg-sand">
+                <BasketPhoto item={item} />
               </Link>
               <div className="min-w-0 flex-1 py-1">
                 <Link href={`/product/${item.slug}`} className="text-ink">{item.name}</Link>

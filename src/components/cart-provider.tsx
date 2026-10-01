@@ -17,7 +17,21 @@ export type CartItem = {
   qty: number;
   motif: Motif;
   palette: PaletteId;
+  imageUrl?: string;
 };
+
+export type CartPhoto = { id: string; slug: string; imageUrl: string };
+
+function withPhoto(item: CartItem, photos: Map<string, string>) {
+  return { ...item, imageUrl: item.imageUrl || photos.get(item.productId) || photos.get(item.slug) || "" };
+}
+
+export function BasketPhoto({ item }: { item: CartItem }) {
+  if (item.imageUrl) {
+    return <img src={item.imageUrl} alt="" className="aspect-square h-full w-full object-cover" />;
+  }
+  return <ProductArt motif={item.motif} palette={item.palette} />;
+}
 
 type CartContextValue = {
   items: CartItem[];
@@ -41,7 +55,17 @@ export function useCart() {
   return value;
 }
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({ children, photos = [] }: { children: React.ReactNode; photos?: CartPhoto[] }) {
+  const photoMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const photo of photos) {
+      if (photo.imageUrl) {
+        map.set(photo.id, photo.imageUrl);
+        map.set(photo.slug, photo.imageUrl);
+      }
+    }
+    return map;
+  }, [photos]);
   const [items, setItems] = useState<CartItem[]>([]);
   const [keepsakes, setKeepsakes] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
@@ -83,9 +107,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, [open]);
 
+  const pictured = useMemo(() => items.map((item) => withPhoto(item, photoMap)), [items, photoMap]);
+
   const value = useMemo<CartContextValue>(() => {
     return {
-      items,
+      items: pictured,
       keepsakes,
       ready,
       count: items.reduce((sum, item) => sum + item.qty, 0),
@@ -97,7 +123,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         if (existing) {
           setItems((current) =>
             current.map((row) =>
-              row.productId === item.productId ? { ...row, qty: Math.min(5, row.qty + item.qty) } : row,
+              row.productId === item.productId
+                ? { ...row, imageUrl: item.imageUrl || row.imageUrl, qty: Math.min(5, row.qty + item.qty) }
+                : row,
             ),
           );
           setOpen(true);
@@ -126,26 +154,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return !has;
       },
     };
-  }, [items, keepsakes, open, ready]);
+  }, [pictured, keepsakes, open, ready]);
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = pictured.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   return (
     <CartContext.Provider value={value}>
       {children}
       <Toaster
         position="top-center"
-        richColors
         closeButton
-        duration={3200}
+        offset={12}
+        duration={2600}
+        style={{ ["--width" as string]: "260px" }}
         toastOptions={{
-          style: {
-            background: "#ffffff",
-            color: "#3d2433",
-            border: "1px solid #f3d5e0",
-            borderRadius: "18px",
-            fontFamily: "var(--font-manrope), sans-serif",
-            boxShadow: "0 22px 50px -28px rgba(196,77,114,0.55)",
+          classNames: {
+            toast: "cosy-toast",
+            title: "cosy-toast-title",
+            closeButton: "cosy-toast-close",
           },
         }}
       />
@@ -160,13 +186,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               </button>
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-              {items.length === 0 ? (
+              {pictured.length === 0 ? (
                 <p className="text-sm text-muted">The basket is empty. The shop is full of soft things.</p>
               ) : (
-                items.map((item) => (
+                pictured.map((item) => (
                   <div key={item.productId} className="flex gap-3">
-                    <Link href={`/product/${item.slug}`} onClick={() => setOpen(false)} className="w-20 shrink-0 overflow-hidden rounded-2xl border border-line">
-                      <ProductArt motif={item.motif} palette={item.palette} />
+                    <Link href={`/product/${item.slug}`} onClick={() => setOpen(false)} className="w-20 shrink-0 overflow-hidden rounded-2xl border border-line bg-white">
+                      <BasketPhoto item={item} />
                     </Link>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-ink">{item.name}</p>
@@ -197,7 +223,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 <Link href="/cart" onClick={() => setOpen(false)} className={buttonClass("ghost")}>
                   View basket
                 </Link>
-                <Link href="/checkout" onClick={() => setOpen(false)} className={buttonClass("solid", items.length === 0 ? "pointer-events-none opacity-50" : "")}>
+                <Link href="/checkout" onClick={() => setOpen(false)} className={buttonClass("solid", pictured.length === 0 ? "pointer-events-none opacity-50" : "")}>
                   Checkout
                 </Link>
               </div>

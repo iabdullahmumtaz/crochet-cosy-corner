@@ -52,6 +52,10 @@ export const categorySchema = z.object({
   imageUrl: z.string().trim().max(500).optional().default(""),
 });
 
+export const themeSchema = z.object({
+  theme: z.enum(["blush", "cocoa", "moss", "lilac"]),
+});
+
 export const whatsappSchema = z.object({
   whatsapp: z
     .string()

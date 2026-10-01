@@ -11,11 +11,15 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   const user = store.users.find((item) => item.id === id && item.role === "customer");
   if (!user) notFound();
   const orders = store.orders.filter((order) => order.userId === user.id || order.email === user.email);
+  const taken = orders.filter((order) => order.status !== "cancelled");
+  const spent = taken.reduce((sum, order) => sum + order.total, 0);
+  const open = taken.filter((order) => order.status !== "delivered").length;
 
   return (
     <div>
       <Link href="/admin/customers" className="text-sm text-sage-deep">Back to customers</Link>
       <h1 className="mt-2 font-display text-4xl text-cocoa">{user.name}</h1>
+      <p className="mt-2 text-sm text-muted">{taken.length} orders · {formatRs(spent)} taken · {open} still open</p>
       <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
         <div><dt className="text-muted">Email</dt><dd>{user.email}</dd></div>
         <div><dt className="text-muted">Phone</dt><dd>{user.phone || "—"}</dd></div>

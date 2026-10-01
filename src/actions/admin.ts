@@ -5,7 +5,7 @@ import { updateStore } from "@/lib/db";
 import { eventCopy, makeEvent, nextStatus } from "@/lib/order-flow";
 import { slugify } from "@/lib/format";
 import { uploadShopImage } from "@/lib/storage";
-import { categorySchema, couponSchema, customerUpdateSchema, nextNumberSchema, orderUpdateSchema, productSchema, whatsappSchema } from "@/lib/validators";
+import { categorySchema, couponSchema, customerUpdateSchema, nextNumberSchema, orderUpdateSchema, productSchema, themeSchema, whatsappSchema } from "@/lib/validators";
 import type { ActionFail, ActionOk, Order, OrderStatus, Product, ShopCategory } from "@/lib/types";
 
 export async function uploadDeskImage(formData: FormData) {
@@ -317,6 +317,30 @@ export async function deleteCategory(id: string): Promise<ActionOk | ActionFail>
     store.categories = (store.categories ?? []).filter((item) => item.id !== id);
     return { ok: true as const };
   });
+}
+
+export async function saveTheme(input: unknown): Promise<ActionOk | ActionFail> {
+  const admin = await requireRole("admin");
+  if (!admin) return { ok: false, error: "Sign in to the studio desk." };
+  const parsed = themeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Choose one of the four themes." };
+  await updateStore((store) => {
+    store.theme = parsed.data.theme;
+  });
+  return { ok: true };
+}
+
+export async function deleteReview(id: string): Promise<ActionOk | ActionFail> {
+  const admin = await requireRole("admin");
+  if (!admin) return { ok: false, error: "Sign in to the studio desk." };
+  if (!id || id.length > 80) return { ok: false, error: "That review could not be removed." };
+  const found = await updateStore((store) => {
+    const before = store.reviews.length;
+    store.reviews = store.reviews.filter((item) => item.id !== id);
+    return store.reviews.length < before;
+  });
+  if (!found) return { ok: false, error: "That review is already gone." };
+  return { ok: true };
 }
 
 export async function saveWhatsapp(input: unknown): Promise<ActionOk | ActionFail> {

@@ -15,7 +15,7 @@ export default function AboutPage() {
           Crochet Cosy Corner makes amigurumi, wearables, botanicals, and bags in small batches. Most pieces start after the order, so the yarn can follow the note you leave.
         </p>
         <p>
-          Prices are in rupees. Delivery is free over Rs3,000, Rs180 inside Karachi, and Rs280 to the other cities we ship to. You can pay on delivery, or by JazzCash and EasyPaisa after we confirm the piece. We never ask for a card number on this site.
+          Prices are in rupees. Delivery is free over Rs5,000, Rs180 inside Lahore, and Rs280 to the other cities we ship to. You can pay on delivery, or by JazzCash and EasyPaisa after we confirm the piece. We never ask for a card number on this site.
         </p>
       </div>
       <h2 className="mt-12 font-display text-3xl text-bark">From the hook to your door</h2>

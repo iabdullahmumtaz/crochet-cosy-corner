@@ -16,7 +16,18 @@ export function YarnTracker({ status, events }: { status: OrderStatus; events: T
 
   return (
     <div>
-      <div className="overflow-x-auto pb-2">
+      <ol className="space-y-2 sm:hidden">
+        {STATUS_FLOW.map((step, index) => {
+          const on = index <= current;
+          return (
+            <li key={step} className="flex items-center gap-3 text-sm">
+              <span className={on ? "loop loop-on" : "loop"}>{index + 1}</span>
+              <span className={on ? "text-ink" : "text-muted"}>{STATUS_LABEL[step]}</span>
+            </li>
+          );
+        })}
+      </ol>
+      <div className="hidden overflow-x-auto pb-2 sm:block">
         <div className="relative min-w-[40rem]">
         <div className="absolute top-[10px] right-4 left-4 h-[2px] bg-line" />
         <div className="absolute top-[10px] left-4 h-[2px] bg-sage" style={{ width: `calc((100% - 2rem) * ${progress / 100})` }} />

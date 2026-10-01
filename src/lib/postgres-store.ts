@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import postgres from "postgres";
+import { themeId } from "@/lib/themes";
 import type { Store } from "@/lib/types";
 
 let client: ReturnType<typeof postgres> | null = null;
@@ -40,6 +41,7 @@ export async function fetchStore(): Promise<Store> {
   return {
     seq: Number(metaMap.get("seq") ?? 1905),
     whatsapp: metaMap.get("whatsapp") ?? "",
+    theme: themeId(metaMap.get("theme")),
     users: users.map((user) => ({
       id: user.id,
       name: user.name,
@@ -170,6 +172,7 @@ export async function writeStore(store: Store) {
   store.subscribers ??= [];
   store.users ??= [];
   store.whatsapp ??= "";
+  store.theme = themeId(store.theme);
   const sql = getSql();
   await sql.begin(async (tx) => {
     await tx`delete from tracking_events`;
@@ -345,6 +348,7 @@ export async function writeStore(store: Store) {
     await tx`insert into shop_meta ${tx([
       { key: "seq", value: String(store.seq) },
       { key: "whatsapp", value: store.whatsapp ?? "" },
+      { key: "theme", value: themeId(store.theme) },
     ])}`;
   });
 }

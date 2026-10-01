@@ -1,4 +1,5 @@
 import type { CategoryId, Motif, PaletteId, PaymentId } from "@/lib/domain";
+import type { ThemeId } from "@/lib/themes";
 
 export type Role = "admin" | "customer";
 
@@ -150,6 +151,7 @@ export type Store = {
   coupons: Coupon[];
   categories: ShopCategory[];
   whatsapp: string;
+  theme: ThemeId;
 };
 
 export type QuoteLine = {

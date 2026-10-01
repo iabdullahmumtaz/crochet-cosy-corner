@@ -7,7 +7,7 @@ const items = [
   ["How long does making take?", "Usually 2–5 days at the hook, then packing. Courier time depends on the city."],
   ["What yarn is used?", "Milk cotton, wool blends, and cotton cord. Each piece names its yarn."],
   ["Can I ask for initials?", "Yes. Leave them in the studio note at checkout. Phone covers and clips are the usual place."],
-  ["How do offers work?", "HUG10 is 10% off over Rs1,500. SOFT500 takes Rs500 off over Rs2,500. FREESHIP waives delivery."],
+  ["When is delivery free?", "Orders over Rs5,000 ship free. Smaller orders are Rs180 in Lahore and Rs280 to the other cities we list."],
   ["How do I track?", "Use the order number and the checkout email on the track page. Signed-in orders also live in your account."],
 ];
 

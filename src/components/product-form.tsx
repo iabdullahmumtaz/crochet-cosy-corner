@@ -14,6 +14,7 @@ export function ProductForm({ product, categories }: { product?: Product; catego
   const [pending, setPending] = useState(false);
   const [palette, setPalette] = useState<PaletteId>(product?.palette ?? "sage");
   const [motif, setMotif] = useState<Motif>(product?.motif ?? "bunny");
+  const [preview, setPreview] = useState(product?.imageUrl ?? "");
 
   return (
     <form
@@ -80,8 +81,17 @@ export function ProductForm({ product, categories }: { product?: Product; catego
         <Field label="Yarn">
           <input name="yarn" required defaultValue={product?.yarn ?? "Milk cotton"} className={controlClass} />
         </Field>
-        <Field label="Photo" hint="JPG, PNG, or WebP under 4 MB. Shown on the shop instead of the colour study.">
-          <input name="file" type="file" accept="image/jpeg,image/png,image/webp" className={controlClass} />
+        <Field label="Photo" hint="JPG, PNG, or WebP under 4 MB. A new file replaces the picture on the right.">
+          <input
+            name="file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className={controlClass}
+            onChange={(event) => {
+              const next = event.target.files?.[0];
+              if (next) setPreview(URL.createObjectURL(next));
+            }}
+          />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Collection">
@@ -125,7 +135,11 @@ export function ProductForm({ product, categories }: { product?: Product; catego
         <Button disabled={pending}>{pending ? "Saving…" : "Save piece"}</Button>
       </div>
       <div className="overflow-hidden rounded-[28px] border border-line bg-white">
-        <ProductArt motif={motif} palette={palette} />
+        {preview ? (
+          <img src={preview} alt="" className="aspect-[4/5] w-full object-cover" />
+        ) : (
+          <ProductArt motif={motif} palette={palette} />
+        )}
       </div>
     </form>
   );

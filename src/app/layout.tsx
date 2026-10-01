@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Manrope } from "next/font/google";
 import { CartProvider } from "@/components/cart-provider";
+import { readStore } from "@/lib/db";
+import { themeId } from "@/lib/themes";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -23,11 +25,17 @@ export const metadata: Metadata = {
   description: "Amigurumi, wearables, crochet flowers, and bags made slowly in small batches.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const store = await readStore();
+  const photos = store.products.map((product) => ({
+    id: product.id,
+    slug: product.slug,
+    imageUrl: product.imageUrl,
+  }));
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${manrope.variable} ${bodoni.variable} h-full antialiased`}>
+    <html lang="en" data-theme={themeId(store.theme)} data-scroll-behavior="smooth" className={`${manrope.variable} ${bodoni.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <CartProvider>{children}</CartProvider>
+        <CartProvider photos={photos}>{children}</CartProvider>
       </body>
     </html>
   );

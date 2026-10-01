@@ -7,7 +7,12 @@ export default async function CategoriesPage() {
     <div>
       <h1 className="font-display text-4xl text-cocoa">Collections</h1>
       <p className="mt-1 mb-6 text-sm text-muted">These are the filters on the shop. A collection with pieces in it cannot be deleted.</p>
-      <CategoryManager categories={store.categories ?? []} />
+      <CategoryManager
+        categories={(store.categories ?? []).map((category) => ({
+          ...category,
+          imageUrl: category.imageUrl || store.products.find((product) => product.category === category.id && product.imageUrl)?.imageUrl || "",
+        }))}
+      />
     </div>
   );
 }

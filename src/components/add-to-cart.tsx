@@ -43,6 +43,7 @@ export function AddToCart({ product }: { product: Product }) {
             qty,
             motif: product.motif,
             palette: product.palette,
+            imageUrl: product.imageUrl,
           });
           if (result === "max") toast.error("You can keep up to 5 of this piece.");
           else {

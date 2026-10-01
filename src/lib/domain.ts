@@ -1,11 +1,11 @@
 export const CATEGORY_IDS = [
-  "wearables",
-  "plushies",
+  "cardigans",
+  "scarves",
+  "gloves",
   "keychains",
   "flowers",
-  "bags",
-  "kits",
-  "accessories",
+  "holders",
+  "bands",
 ] as const;
 
 export type CategoryId = (typeof CATEGORY_IDS)[number];
@@ -18,53 +18,53 @@ export const CATEGORIES: {
   palette: PaletteId;
 }[] = [
   {
-    id: "wearables",
-    label: "Wearables",
-    blurb: "Scarves, paw gloves, and arm warmers in milk cotton and wool.",
-    motif: "gloves",
-    palette: "sage",
+    id: "cardigans",
+    label: "Cardigans",
+    blurb: "Cropped granny cardigans and an open mesh shrug, tied at the front.",
+    motif: "scarf",
+    palette: "burgundy",
   },
   {
-    id: "plushies",
-    label: "Plushies",
-    blurb: "Amigurumi friends, stuffed and ready to be held.",
-    motif: "bunny",
+    id: "scarves",
+    label: "Scarves",
+    blurb: "Rib scarves with bows, roses, sunflowers, and granny squares.",
+    motif: "scarf",
+    palette: "rose",
+  },
+  {
+    id: "gloves",
+    label: "Gloves",
+    blurb: "Fingerless gloves, paw gloves, and long arm warmers.",
+    motif: "gloves",
     palette: "blush",
   },
   {
     id: "keychains",
     label: "Keychains",
-    blurb: "Bag charms and mini amigurumi on a ring.",
+    blurb: "Tiny charms on a ring: paws, bears, flowers, and little faces.",
     motif: "keychain",
     palette: "berry",
   },
   {
     id: "flowers",
     label: "Flowers",
-    blurb: "Crochet stems and bouquets that never need water.",
+    blurb: "Stems, hangers, and bouquets that stay in bloom.",
     motif: "bouquet",
-    palette: "rose",
-  },
-  {
-    id: "bags",
-    label: "Bags",
-    blurb: "Shoulder bags in cotton cord, made to be carried daily.",
-    motif: "bag",
-    palette: "ocean",
-  },
-  {
-    id: "kits",
-    label: "Crochet kits",
-    blurb: "A hook, yarn, and a first small project for new hands.",
-    motif: "kit",
-    palette: "gold",
-  },
-  {
-    id: "accessories",
-    label: "Accessories",
-    blurb: "Hair clips, phone covers, and little pins.",
-    motif: "clip",
     palette: "sun",
+  },
+  {
+    id: "holders",
+    label: "Card holders",
+    blurb: "Small pouches and card holders with bows and scalloped flaps.",
+    motif: "phone",
+    palette: "blush",
+  },
+  {
+    id: "bands",
+    label: "Bandanas",
+    blurb: "Triangle bandanas and openwork cuffs.",
+    motif: "clip",
+    palette: "cream",
   },
 ];
 
@@ -154,8 +154,8 @@ export const PALETTES: Record<PaletteId, Palette> = {
 };
 
 export const CITIES = [
-  "Karachi",
   "Lahore",
+  "Karachi",
   "Islamabad",
   "Rawalpindi",
   "Faisalabad",
@@ -177,12 +177,12 @@ export const PAYMENTS: { id: PaymentId; label: string; detail: string }[] = [
   { id: "easypaisa", label: "EasyPaisa", detail: "We send a payment request after the piece is confirmed." },
 ];
 
-export const FREE_DELIVERY = 3000;
+export const FREE_DELIVERY = 5000;
 
 export function shippingFor(subtotal: number, city: string) {
   if (subtotal <= 0) return 0;
   if (subtotal >= FREE_DELIVERY) return 0;
-  if (city === "Karachi") return 180;
+  if (city === "Lahore") return 180;
   return 280;
 }
 

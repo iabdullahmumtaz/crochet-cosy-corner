@@ -2,9 +2,9 @@ import type { Coupon } from "@/lib/types";
 
 export function defaultCoupons(): Coupon[] {
   return [
-    { code: "HUG10", label: "10% off", type: "percent", value: 10, minOrder: 1500, active: true },
-    { code: "SOFT500", label: "Rs500 off", type: "fixed", value: 500, minOrder: 2500, active: true },
-    { code: "FREESHIP", label: "Free delivery", type: "shipping", value: 0, minOrder: 0, active: true },
+    { code: "HUG10", label: "10% off", type: "percent", value: 10, minOrder: 1500, active: false },
+    { code: "SOFT500", label: "Rs500 off", type: "fixed", value: 500, minOrder: 2500, active: false },
+    { code: "FREESHIP", label: "Free delivery", type: "shipping", value: 0, minOrder: 0, active: false },
   ];
 }
 

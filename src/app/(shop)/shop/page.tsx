@@ -48,7 +48,7 @@ export default async function ShopPage({
       <p className="mt-2 max-w-xl text-sm text-muted">
         {category
           ? categories.find((item) => item.id === category)?.blurb
-          : "Wearables, plushies, flowers, bags, and little charms. All handmade."}
+          : "Cardigans, scarves, gloves, keychains, flowers, and card holders. All handmade."}
       </p>
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
         <Link href="/shop" className={`shrink-0 rounded-full px-4 py-2 text-sm ${category ? "bg-white text-bark" : "bg-sage text-white"}`}>All</Link>

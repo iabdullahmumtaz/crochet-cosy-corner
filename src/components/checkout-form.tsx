@@ -13,7 +13,7 @@ import type { PublicUser, Quote } from "@/lib/types";
 export function CheckoutForm({ user }: { user: PublicUser | null }) {
   const router = useRouter();
   const { items, clear, ready } = useCart();
-  const [city, setCity] = useState(user?.city && (CITIES as readonly string[]).includes(user.city) ? user.city : "Karachi");
+  const [city, setCity] = useState(user?.city && (CITIES as readonly string[]).includes(user.city) ? user.city : "Lahore");
   const [line, setLine] = useState(user?.addresses[0]?.line ?? "");
   const [phone, setPhone] = useState(user?.addresses[0]?.phone || user?.phone || "");
   const [coupon, setCoupon] = useState("");
@@ -170,7 +170,7 @@ export function CheckoutForm({ user }: { user: PublicUser | null }) {
         ) : null}
         <label className="mt-4 block">
           <span className="mb-1.5 block text-sm font-semibold text-bark">Offer code</span>
-          <input value={coupon} onChange={(event) => setCoupon(event.target.value.toUpperCase())} placeholder="HUG10" className={controlClass} />
+          <input value={coupon} onChange={(event) => setCoupon(event.target.value.toUpperCase())} placeholder="Code" className={controlClass} />
         </label>
       </aside>
     </form>

@@ -14,15 +14,13 @@ export function Header({ user, categories }: { user: PublicUser | null; categori
   const accountLabel = user?.role === "admin" ? "Desk" : user ? "Account" : "Sign in";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-white">
       <div className="mx-auto flex min-h-[4.25rem] max-w-6xl items-center gap-3 px-4 py-2 sm:gap-4 sm:px-5">
         <Logo />
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
-          {categories.slice(0, 5).map((category) => (
-            <Link key={category.id} href={`/shop?category=${category.id}`} className="rounded-full px-3 py-1.5 text-[13px] text-bark transition hover:bg-white hover:text-ink">
-              {category.label}
-            </Link>
-          ))}
+          <Link href="/shop" className="rounded-full px-3 py-1.5 text-[13px] text-bark transition hover:bg-white hover:text-ink">Shop</Link>
+          <Link href="/about" className="rounded-full px-3 py-1.5 text-[13px] text-bark transition hover:bg-white hover:text-ink">About</Link>
+          <Link href="/contact" className="rounded-full px-3 py-1.5 text-[13px] text-bark transition hover:bg-white hover:text-ink">Contact</Link>
         </nav>
         <div className="ml-auto flex items-center gap-1.5">
           <form action="/shop" className="relative hidden md:block">
@@ -74,6 +72,9 @@ export function Header({ user, categories }: { user: PublicUser | null; categori
             <input name="q" aria-label="Search pieces" placeholder="Search" className="h-11 w-full rounded-full border border-line bg-white px-4 text-sm" />
           </form>
           <div className="flex flex-wrap gap-2">
+            <Link href="/shop" onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">Shop</Link>
+            <Link href="/about" onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">About</Link>
+            <Link href="/contact" onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">Contact</Link>
             {categories.map((category) => (
               <Link key={category.id} href={`/shop?category=${category.id}`} onClick={() => setMenu(false)} className="rounded-full bg-white px-3 py-1.5 text-sm">
                 {category.label}

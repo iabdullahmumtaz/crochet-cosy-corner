@@ -10,10 +10,12 @@ export function DeskSettings({
   number,
   seq,
   subscribers,
+  pager,
 }: {
   number: string;
   seq: number;
   subscribers: { id: string; email: string }[];
+  pager?: React.ReactNode;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -74,6 +76,7 @@ export function DeskSettings({
             </li>
           ))}
         </ul>
+        {pager}
       </section>
     </div>
   );
