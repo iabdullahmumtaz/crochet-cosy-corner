@@ -19,6 +19,17 @@ export function getSql() {
   return client;
 }
 
+export async function resetSql() {
+  const current = client;
+  client = null;
+  if (!current) return;
+  try {
+    await current.end({ timeout: 1 });
+  } catch {
+    // The pool is already closed.
+  }
+}
+
 export async function fetchStore(): Promise<Store> {
   const sql = getSql();
   const [meta, users, addresses, categories, products, orders, items, events, reviews, messages, subscribers, coupons] =

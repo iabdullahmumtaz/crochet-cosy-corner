@@ -36,12 +36,16 @@ export function toPublicUser(user: {
 }
 
 export async function getCurrentUser(): Promise<PublicUser | null> {
-  const jar = await cookies();
-  const token = await verifyToken(jar.get(SESSION_COOKIE)?.value);
-  if (!token || token.kind !== "session") return null;
-  const user = await readUser(token.uid);
-  if (!user || user.role !== token.role) return null;
-  return toPublicUser(user);
+  try {
+    const jar = await cookies();
+    const token = await verifyToken(jar.get(SESSION_COOKIE)?.value);
+    if (!token || token.kind !== "session") return null;
+    const user = await readUser(token.uid);
+    if (!user || user.role !== token.role) return null;
+    return toPublicUser(user);
+  } catch {
+    return null;
+  }
 }
 
 export async function requireRole(role: Role) {
