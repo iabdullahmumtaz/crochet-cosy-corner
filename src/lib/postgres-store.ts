@@ -14,14 +14,16 @@ function databaseUrl() {
 
 export function getSql() {
   if (!client) {
-    client = postgres(databaseUrl(), {
+    // max_pipeline is supported at runtime. The published types omit it.
+    const options: postgres.Options<Record<string, never>> & { max_pipeline: number } = {
       prepare: false,
       max: 1,
       idle_timeout: 20,
       connect_timeout: 10,
       // The transaction pooler mixes pipelined queries and can omit columns such as created_at.
       max_pipeline: 0,
-    });
+    };
+    client = postgres(databaseUrl(), options);
   }
   return client;
 }
