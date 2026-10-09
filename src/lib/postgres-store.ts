@@ -1,6 +1,9 @@
+import dns from "dns";
 import fs from "fs";
 import path from "path";
 import postgres from "postgres";
+
+if (typeof dns.setDefaultResultOrder === "function") dns.setDefaultResultOrder("ipv4first");
 import { themeId } from "@/lib/themes";
 import type { Coupon, Order, Product, Review, ShopCategory, Store, StudioMessage, Subscriber, User } from "@/lib/types";
 
@@ -19,8 +22,7 @@ export function getSql() {
     // max_pipeline is supported at runtime. The published types omit it.
     const options: postgres.Options<Record<string, never>> & { max_pipeline: number } = {
       prepare: false,
-      max: 1,
-      idle_timeout: 20,
+      max: 3,
       connect_timeout: 10,
       // 0 never hands the connection to a transaction, so saves never run.
       // 1 keeps a single query in flight so the pooler cannot mix result columns.

@@ -12,6 +12,28 @@ import type { Store, User } from "@/lib/types";
 let queue: Promise<void> = Promise.resolve();
 let seeding: Promise<Store> | null = null;
 
+const REMEMBER_MS = 15_000;
+
+type Timed<T> = { at: number; value: T };
+
+let catalogMemory: Timed<Awaited<ReturnType<typeof fetchCatalog>>> | null = null;
+let storeMemory: Timed<Store> | null = null;
+let sellableMemory: Timed<Awaited<ReturnType<typeof fetchSellables>>> | null = null;
+const userMemory = new Map<string, Timed<User | null>>();
+
+function recall<T>(entry: Timed<T> | null): T | null {
+  if (!entry || Date.now() - entry.at > REMEMBER_MS) return null;
+  return structuredClone(entry.value);
+}
+
+function clearShopMemory() {
+  catalogMemory = null;
+  storeMemory = null;
+  sellableMemory = null;
+  userMemory.clear();
+  clearThemeCache();
+}
+
 function hydrate(store: Store) {
   store.coupons ??= defaultCoupons();
   for (const user of store.users) user.addresses ??= [];
@@ -44,8 +66,11 @@ async function seedIfEmpty(store: Store) {
 
 export const readStore = cache(async () => {
   await connection();
-  const store = await seedIfEmpty(await fetchStore());
-  return structuredClone(hydrate(store));
+  const remembered = recall(storeMemory);
+  if (remembered) return remembered;
+  const store = hydrate(await seedIfEmpty(await fetchStore()));
+  storeMemory = { at: Date.now(), value: store };
+  return structuredClone(store);
 });
 
 export const readTheme = cache(async () => {
@@ -59,12 +84,15 @@ export const readTheme = cache(async () => {
 
 export const readCatalog = cache(async () => {
   await connection();
+  const remembered = recall(catalogMemory);
+  if (remembered) return remembered;
   const catalog = await fetchCatalog();
   if (!catalog.categories.length) {
     catalog.categories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
   }
   for (const product of catalog.products) product.imageUrl ??= "";
   for (const category of catalog.categories) category.imageUrl ??= "";
+  catalogMemory = { at: Date.now(), value: catalog };
   return structuredClone(catalog);
 });
 
@@ -74,7 +102,11 @@ export async function buyerReceived(userId: string, productId: string) {
 
 export const readUser = cache(async (id: string): Promise<User | null> => {
   await connection();
-  return fetchUserById(id);
+  const remembered = userMemory.get(id);
+  if (remembered && Date.now() - remembered.at <= REMEMBER_MS) return structuredClone(remembered.value);
+  const user = await fetchUserById(id);
+  userMemory.set(id, { at: Date.now(), value: user });
+  return structuredClone(user);
 });
 
 export const readUserByEmail = cache(async (email: string): Promise<User | null> => {
@@ -84,7 +116,11 @@ export const readUserByEmail = cache(async (email: string): Promise<User | null>
 
 export const readSellables = cache(async () => {
   await connection();
-  return fetchSellables();
+  const remembered = recall(sellableMemory);
+  if (remembered) return remembered;
+  const value = await fetchSellables();
+  sellableMemory = { at: Date.now(), value };
+  return structuredClone(value);
 });
 
 export const readOrdersForUser = cache(async (userId: string) => {
@@ -116,7 +152,7 @@ export async function updateStore<T>(mutator: (store: Store) => T): Promise<T> {
         await persistDiff(tx, before, store);
         return value;
       })) as T;
-      clearThemeCache();
+      clearShopMemory();
       try {
         publishShop();
       } catch (error) {
