@@ -78,25 +78,29 @@ export async function HeroCards() {
   );
 }
 
-export function RailSkeleton() {
-  return (
-    <div className="flex gap-5 overflow-hidden" aria-hidden>
-      {Array.from({ length: 4 }, (_, index) => (
-        <div key={index} className="w-[72%] shrink-0 sm:w-64">
-          <div className="bone aspect-[4/5] w-full rounded-3xl" />
-          <div className="bone mt-4 h-5 w-3/4 rounded-full" />
-          <div className="bone mt-2 h-4 w-1/3 rounded-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export async function CategoryRail({ id }: { id: string }) {
+export async function HomeShelves() {
   const catalog = await readCatalog();
-  const pieces = catalog.products.filter((product) => product.active && product.category === id);
-  if (!pieces.length) return null;
-  return <ProductRail products={pieces} />;
+  return (
+    <>
+      {catalog.categories.map((category, index) => {
+        const pieces = catalog.products.filter((product) => product.active && product.category === category.id);
+        return (
+          <section key={category.id} className="mx-auto max-w-6xl px-5 py-12">
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="hero-rise font-display text-3xl font-medium text-ink sm:text-4xl" style={{ animationDelay: `${80 + index * 30}ms` }}>{category.label}</h2>
+                <p className="hero-rise mt-2 max-w-xl text-sm leading-6 text-muted" style={{ animationDelay: `${140 + index * 30}ms` }}>{category.blurb}</p>
+              </div>
+              <Link href={`/shop?category=${category.id}`} className="shrink-0 text-sm text-sage underline decoration-petal underline-offset-4">
+                View all
+              </Link>
+            </div>
+            {pieces.length ? <ProductRail products={pieces} /> : null}
+          </section>
+        );
+      })}
+    </>
+  );
 }
 
 export async function HomeNotes() {

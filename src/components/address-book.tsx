@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { removeAddress, saveAddress } from "@/actions/shop";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 import { CITIES } from "@/lib/domain";
 import type { SavedAddress } from "@/lib/types";
@@ -26,7 +27,8 @@ export function AddressBook({ addresses }: { addresses: SavedAddress[] }) {
               type="button"
               className="text-sm font-semibold text-sale"
               onClick={async () => {
-                const result = await removeAddress(item.id);
+                const result = await guardSave(setPending, () => removeAddress(item.id));
+                if (!result) return;
                 if (!result.ok) toast.error(result.error);
                 else router.refresh();
               }}
@@ -41,14 +43,13 @@ export function AddressBook({ addresses }: { addresses: SavedAddress[] }) {
         onSubmit={async (event) => {
           event.preventDefault();
           const data = new FormData(event.currentTarget);
-          setPending(true);
-          const result = await saveAddress({
+          const result = await guardSave(setPending, () => saveAddress({
             label: data.get("label"),
             line: data.get("line"),
             city: data.get("city"),
             phone: data.get("phone"),
-          });
-          setPending(false);
+          }));
+          if (!result) return;
           if (!result.ok) {
             toast.error(result.error);
             return;

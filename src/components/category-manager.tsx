@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteCategory, saveCategory, uploadDeskImage } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { CardPhoto } from "@/components/card-photo";
 import { Button, Field, controlClass } from "@/components/button";
 import { MOTIFS, PALETTE_IDS } from "@/lib/domain";
@@ -48,7 +49,8 @@ export function CategoryManager({ categories }: { categories: ShopCategory[] }) 
                       type="button"
                       className="font-medium text-sale"
                       onClick={async () => {
-                        const result = await deleteCategory(category.id);
+                        const result = await guardSave(setPending, () => deleteCategory(category.id));
+                        if (!result) return;
                         if (!result.ok) toast.error(result.error);
                         else {
                           toast.success("Collection removed");
@@ -72,29 +74,26 @@ export function CategoryManager({ categories }: { categories: ShopCategory[] }) 
           event.preventDefault();
           const data = new FormData(event.currentTarget);
           const file = data.get("file");
-          setPending(true);
-          let imageUrl = current?.imageUrl ?? "";
-          if (file instanceof File && file.size > 0) {
-            const uploadData = new FormData();
-            uploadData.set("file", file);
-            uploadData.set("folder", "categories");
-            const uploaded = await uploadDeskImage(uploadData);
-            if (!uploaded.ok) {
-              setPending(false);
-              toast.error(uploaded.error);
-              return;
+          const result = await guardSave(setPending, async () => {
+            let imageUrl = current?.imageUrl ?? "";
+            if (file instanceof File && file.size > 0) {
+              const uploadData = new FormData();
+              uploadData.set("file", file);
+              uploadData.set("folder", "categories");
+              const uploaded = await uploadDeskImage(uploadData);
+              if (!uploaded.ok) return uploaded;
+              imageUrl = uploaded.url;
             }
-            imageUrl = uploaded.url;
-          }
-          const result = await saveCategory({
-            id: current?.id ?? "",
-            label: data.get("label"),
-            blurb: data.get("blurb"),
-            motif: data.get("motif"),
-            palette: data.get("palette"),
-            imageUrl,
+            return saveCategory({
+              id: current?.id ?? "",
+              label: data.get("label"),
+              blurb: data.get("blurb"),
+              motif: data.get("motif"),
+              palette: data.get("palette"),
+              imageUrl,
+            });
           });
-          setPending(false);
+          if (!result) return;
           if (!result.ok) {
             toast.error(result.error);
             return;

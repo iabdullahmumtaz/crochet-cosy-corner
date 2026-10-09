@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { canViewOrder, getCurrentUser, requireRole, setReceipt } from "@/lib/auth";
 import { applyCoupon } from "@/lib/coupons";
 import { CITIES, PAYMENTS, shippingFor } from "@/lib/domain";
-import { readStore, updateStore } from "@/lib/db";
+import { readOrderByNumber, readSellables, updateStore } from "@/lib/db";
 import { eventCopy, makeEvent } from "@/lib/order-flow";
 import { priceLines } from "@/lib/pricing";
 import { rateLimit } from "@/lib/rate-limit";
@@ -23,11 +23,11 @@ function trap(value: unknown) {
 export async function quoteCart(input: unknown): Promise<Quote> {
   const parsed = quoteSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "The basket could not be read." };
-  const store = await readStore();
-  const priced = priceLines(store.products, parsed.data.items);
+  const sellables = await readSellables();
+  const priced = priceLines(sellables.products, parsed.data.items);
   if (!priced.ok) return priced;
   const city = parsed.data.city && (CITIES as readonly string[]).includes(parsed.data.city) ? parsed.data.city : null;
-  const deal = applyCoupon(store.coupons ?? [], parsed.data.coupon, priced.subtotal);
+  const deal = applyCoupon(sellables.coupons ?? [], parsed.data.coupon, priced.subtotal);
   let shipping = city ? shippingFor(priced.subtotal, city) : null;
   let discount = 0;
   let couponCode = "";
@@ -132,11 +132,10 @@ export async function lookupOrder(input: unknown): Promise<ActionFail | { ok: tr
   const limited = rateLimit(`track:${parsed.data.email}:${await callerKey()}`, 12, 15 * 60 * 1000);
   if (limited) return { ok: false, error: limited };
 
-  const store = await readStore();
-  const order = store.orders.find(
-    (item) => item.number === parsed.data.number && item.email === parsed.data.email.toLowerCase(),
-  );
-  if (!order) return { ok: false, error: "We couldn't find an order with those details." };
+  const order = await readOrderByNumber(parsed.data.number);
+  if (!order || order.email !== parsed.data.email.toLowerCase()) {
+    return { ok: false, error: "We couldn't find an order with those details." };
+  }
   const allowed = await canViewOrder(order);
   if (!allowed && order.email !== parsed.data.email.toLowerCase()) {
     return { ok: false, error: "We couldn't find an order with those details." };
@@ -262,8 +261,7 @@ export async function removeAddress(id: string): Promise<ActionOk | ActionFail> 
 
 export async function getOrderIfAllowed(number: string) {
   if (!/^CC-\d+$/.test(number)) return null;
-  const store = await readStore();
-  const order = store.orders.find((item) => item.number === number);
+  const order = await readOrderByNumber(number);
   if (!order) return null;
   if (!(await canViewOrder(order))) return null;
   return order;

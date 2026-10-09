@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteCoupon, saveCoupon } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 import type { Coupon } from "@/lib/types";
 
@@ -28,7 +29,8 @@ export function OfferForm({ coupons }: { coupons: Coupon[] }) {
                 type="button"
                 className="font-medium text-sage"
                 onClick={async () => {
-                  const result = await saveCoupon({ ...coupon, active: !coupon.active });
+                  const result = await guardSave(setPending, () => saveCoupon({ ...coupon, active: !coupon.active }));
+                  if (!result) return;
                   if (!result.ok) toast.error(result.error);
                   else router.refresh();
                 }}
@@ -40,7 +42,8 @@ export function OfferForm({ coupons }: { coupons: Coupon[] }) {
                 className="font-medium text-sale"
                 onClick={async () => {
                   if (!window.confirm(`Remove ${coupon.code}?`)) return;
-                  const result = await deleteCoupon(coupon.code);
+                  const result = await guardSave(setPending, () => deleteCoupon(coupon.code));
+                  if (!result) return;
                   if (!result.ok) toast.error(result.error);
                   else {
                     toast.success("Offer removed");
@@ -61,16 +64,15 @@ export function OfferForm({ coupons }: { coupons: Coupon[] }) {
         onSubmit={async (event) => {
           event.preventDefault();
           const data = new FormData(event.currentTarget);
-          setPending(true);
-          const result = await saveCoupon({
+          const result = await guardSave(setPending, () => saveCoupon({
             code: data.get("code"),
             label: data.get("label"),
             type: data.get("type"),
             value: Number(data.get("value")),
             minOrder: Number(data.get("minOrder")),
             active: current?.active ?? true,
-          });
-          setPending(false);
+          }));
+          if (!result) return;
           if (!result.ok) {
             toast.error(result.error);
             return;

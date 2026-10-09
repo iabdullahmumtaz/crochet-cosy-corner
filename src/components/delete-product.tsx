@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteProduct } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { buttonClass } from "@/components/button";
 
 export function DeleteProduct({ id, compact = false }: { id: string; compact?: boolean }) {
@@ -17,9 +18,8 @@ export function DeleteProduct({ id, compact = false }: { id: string; compact?: b
       disabled={pending}
       onClick={async () => {
         if (!window.confirm("Remove this piece from the shop?")) return;
-        setPending(true);
-        const result = await deleteProduct(id);
-        setPending(false);
+        const result = await guardSave(setPending, () => deleteProduct(id));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

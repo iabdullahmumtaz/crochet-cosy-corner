@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { OrderPanel } from "@/components/order-panel";
 import { getCurrentUser } from "@/lib/auth";
-import { readStore } from "@/lib/db";
+import { readOrderByNumber } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Your order" };
 
@@ -11,8 +11,8 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ n
   const user = await getCurrentUser();
   if (!user || user.role !== "customer") redirect("/login");
   const { number } = await params;
-  const store = await readStore();
-  const order = store.orders.find((item) => item.number === number && item.userId === user.id);
+  const found = await readOrderByNumber(number);
+  const order = found?.userId === user.id ? found : null;
   if (!order) notFound();
 
   return (

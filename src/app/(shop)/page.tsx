@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { CategoryMarks, CategoryPhotos, CategoryRail, HeroCards, HeroSkeleton, HomeNotes, RailSkeleton } from "@/components/home-catalog";
+import { CategoryMarks, CategoryPhotos, HeroCards, HeroSkeleton, HomeNotes, HomeShelves } from "@/components/home-catalog";
 import { buttonClass } from "@/components/button";
-import { CATEGORIES } from "@/lib/domain";
 
 export default function HomePage() {
   return (
@@ -29,22 +28,9 @@ export default function HomePage() {
       <Suspense fallback={<CategoryMarks />}>
         <CategoryPhotos />
       </Suspense>
-      {CATEGORIES.map((category, index) => (
-        <section key={category.id} className="mx-auto max-w-6xl px-5 py-12">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <div>
-              <h2 className="hero-rise font-display text-3xl font-medium text-ink sm:text-4xl" style={{ animationDelay: `${80 + index * 30}ms` }}>{category.label}</h2>
-              <p className="hero-rise mt-2 max-w-xl text-sm leading-6 text-muted" style={{ animationDelay: `${140 + index * 30}ms` }}>{category.blurb}</p>
-            </div>
-            <Link href={`/shop?category=${category.id}`} className="shrink-0 text-sm text-sage underline decoration-petal underline-offset-4">
-              View all
-            </Link>
-          </div>
-          <Suspense fallback={<RailSkeleton />}>
-            <CategoryRail id={category.id} />
-          </Suspense>
-        </section>
-      ))}
+      <Suspense fallback={null}>
+        <HomeShelves />
+      </Suspense>
       <Suspense fallback={null}>
         <HomeNotes />
       </Suspense>

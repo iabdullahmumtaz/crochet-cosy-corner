@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { subscribe } from "@/actions/shop";
+import { guardSave } from "@/lib/guard-save";
 import { buttonClass, controlClass } from "@/components/button";
 
 export function NewsletterForm() {
@@ -14,9 +15,8 @@ export function NewsletterForm() {
       onSubmit={async (event) => {
         event.preventDefault();
         const email = String(new FormData(event.currentTarget).get("email") ?? "");
-        setPending(true);
-        const result = await subscribe({ email });
-        setPending(false);
+        const result = await guardSave(setPending, () => subscribe({ email }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

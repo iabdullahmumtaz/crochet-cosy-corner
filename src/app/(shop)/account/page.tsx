@@ -5,7 +5,7 @@ import { KeepCount } from "@/components/keep-count";
 import { ProfileForm } from "@/components/profile-form";
 import { StatusPill } from "@/components/yarn-tracker";
 import { getCurrentUser } from "@/lib/auth";
-import { readStore } from "@/lib/db";
+import { readOrdersForUser } from "@/lib/db";
 import { formatRs, formatWhen } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Your account" };
@@ -13,8 +13,7 @@ export const metadata: Metadata = { title: "Your account" };
 export default async function AccountPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "customer") redirect("/login");
-  const store = await readStore();
-  const orders = store.orders.filter((order) => order.userId === user.id);
+  const orders = await readOrdersForUser(user.id);
 
   const first = user.name.trim().slice(0, 1).toUpperCase() || "C";
 

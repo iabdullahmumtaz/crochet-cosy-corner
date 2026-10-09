@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateOrder } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 import { STATUS_LABEL } from "@/lib/order-flow";
 import type { OrderStatus } from "@/lib/types";
@@ -34,8 +35,7 @@ export function OrderActions({
 
   async function send(intent: "set" | "details", form: HTMLFormElement) {
     const data = new FormData(form);
-    setPending(true);
-    const result = await updateOrder({
+    const result = await guardSave(setPending, () => updateOrder({
       number,
       intent,
       status: data.get("status"),
@@ -46,8 +46,8 @@ export function OrderActions({
       phone: data.get("phone") ?? "",
       address: data.get("address"),
       city: data.get("city"),
-    });
-    setPending(false);
+    }));
+    if (!result) return;
     if (!result.ok) {
       toast.error(result.error);
       return;

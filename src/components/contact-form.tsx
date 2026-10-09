@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { sendMessage } from "@/actions/shop";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 
 const topics = ["Order", "Custom piece", "Crochet kit", "Something else"] as const;
@@ -16,15 +17,14 @@ export function ContactForm() {
       onSubmit={async (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        setPending(true);
-        const result = await sendMessage({
+        const result = await guardSave(setPending, () => sendMessage({
           name: data.get("name"),
           email: data.get("email"),
           topic: data.get("topic"),
           body: data.get("body"),
           company: data.get("company"),
-        });
-        setPending(false);
+        }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

@@ -142,3 +142,10 @@ alter table messages enable row level security;
 alter table subscribers enable row level security;
 alter table coupons enable row level security;
 alter table shop_meta enable row level security;
+
+create index if not exists products_category_idx on products (category);
+create index if not exists orders_user_idx on orders (user_id);
+create index if not exists order_items_order_idx on order_items (order_id);
+create index if not exists tracking_events_order_idx on tracking_events (order_id);
+create index if not exists addresses_user_idx on addresses (user_id);
+create index if not exists reviews_product_idx on reviews (product_id);

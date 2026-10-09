@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { clearSession, getCurrentUser, passwordMatches, setSession } from "@/lib/auth";
-import { readStore, updateStore } from "@/lib/db";
+import { readUserByEmail, updateStore } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
 import { siteOrigin, supabaseAuth } from "@/lib/supabase";
 import { loginSchema, registerSchema } from "@/lib/validators";
@@ -48,8 +48,7 @@ export async function loginCustomer(formData: FormData): Promise<ActionOk | Acti
     }
   }
 
-  const store = await readStore();
-  const user = store.users.find((item) => item.email === email);
+  const user = await readUserByEmail(email);
   const match = await passwordMatches(parsed.data.password, user?.passwordHash);
   if (!user || !match || user.role !== "customer") {
     return { ok: false, error: "Those details don't match." };
@@ -70,8 +69,7 @@ export async function loginAdmin(formData: FormData): Promise<ActionOk | ActionF
   const limited = rateLimit(`admin:${email}:${await callerKey()}`, 8, 15 * 60 * 1000);
   if (limited) return { ok: false, error: limited };
 
-  const store = await readStore();
-  const user = store.users.find((item) => item.email === email);
+  const user = await readUserByEmail(email);
   const match = await passwordMatches(parsed.data.password, user?.passwordHash);
   if (!user || !match || user.role !== "admin") {
     return { ok: false, error: "Those details don't open the studio desk." };
@@ -94,8 +92,8 @@ export async function registerCustomer(formData: FormData): Promise<ActionOk | A
   const limited = rateLimit(`register:${await callerKey()}`, 5, 60 * 60 * 1000);
   if (limited) return { ok: false, error: limited };
 
-  const existing = await readStore();
-  if (existing.users.some((item) => item.email === email)) {
+  const existing = await readUserByEmail(email);
+  if (existing) {
     return { ok: false, error: "An account with that email already exists." };
   }
 

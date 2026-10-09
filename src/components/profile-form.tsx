@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateProfile } from "@/actions/shop";
+import { guardSave } from "@/lib/guard-save";
 import { logout } from "@/actions/auth";
 import { Button, Field, controlClass } from "@/components/button";
 import { CITIES } from "@/lib/domain";
@@ -19,13 +20,12 @@ export function ProfileForm({ user }: { user: PublicUser }) {
       onSubmit={async (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        setPending(true);
-        const result = await updateProfile({
+        const result = await guardSave(setPending, () => updateProfile({
           name: data.get("name"),
           phone: data.get("phone"),
           city: data.get("city"),
-        });
-        setPending(false);
+        }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteReview } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 
 export function DeleteReview({ id }: { id: string }) {
   const router = useRouter();
@@ -15,9 +16,8 @@ export function DeleteReview({ id }: { id: string }) {
       className="text-sale"
       disabled={pending}
       onClick={async () => {
-        setPending(true);
-        const result = await deleteReview(id);
-        setPending(false);
+        const result = await guardSave(setPending, () => deleteReview(id));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

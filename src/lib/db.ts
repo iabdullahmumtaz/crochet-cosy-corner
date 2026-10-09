@@ -1,15 +1,16 @@
 import "server-only";
 import { cache } from "react";
+import { revalidatePath } from "next/cache";
+import { connection } from "next/server";
 import { defaultCoupons } from "@/lib/coupons";
 import { CATEGORIES } from "@/lib/domain";
 import { themeId } from "@/lib/themes";
 import { createSeed } from "@/lib/seed";
-import { fetchCatalog, fetchStore, fetchTheme, fetchUserById, hasDeliveredPiece, readLocalSnapshot, writeStore } from "@/lib/postgres-store";
+import { clearThemeCache, fetchCatalog, fetchOrderByNumber, fetchOrdersForUser, fetchSellables, fetchStore, fetchTheme, fetchUserByEmail, fetchUserById, getSql, hasDeliveredPiece, persistDiff, readLocalSnapshot, writeStore } from "@/lib/postgres-store";
 import type { Store, User } from "@/lib/types";
 
-let memory: Store | null = null;
-let loading: Promise<Store> | null = null;
 let queue: Promise<void> = Promise.resolve();
+let seeding: Promise<Store> | null = null;
 
 function hydrate(store: Store) {
   store.coupons ??= defaultCoupons();
@@ -27,111 +28,107 @@ function hydrate(store: Store) {
   return store;
 }
 
-async function load() {
-  if (memory) return memory;
-  if (!loading) {
-    loading = (async () => {
-      let store = await fetchStore();
-      if (store.users.length === 0 && store.products.length === 0) {
-        store = hydrate(readLocalSnapshot() ?? createSeed());
-        await writeStore(store);
-        store = await fetchStore();
-      }
-      memory = hydrate(store);
-      return memory;
+async function seedIfEmpty(store: Store) {
+  if (store.users.length > 0 || store.products.length > 0) return store;
+  if (!seeding) {
+    seeding = (async () => {
+      const seeded = hydrate(structuredClone(readLocalSnapshot() ?? createSeed()));
+      await writeStore(seeded);
+      return fetchStore();
     })().finally(() => {
-      loading = null;
+      seeding = null;
     });
   }
-  return loading;
+  return seeding;
 }
 
 export const readStore = cache(async () => {
-  const store = await load();
-  hydrate(store);
-  return structuredClone(store);
+  await connection();
+  const store = await seedIfEmpty(await fetchStore());
+  return structuredClone(hydrate(store));
 });
-
-async function readThemeOnce() {
-  if (memory) return themeId(memory.theme);
-  return fetchTheme();
-}
 
 export const readTheme = cache(async () => {
   try {
-    return await readThemeOnce();
+    await connection();
+    return await fetchTheme();
   } catch {
     return "blush" as const;
   }
 });
 
-type CatalogSlice = {
-  categories: Store["categories"];
-  products: Store["products"];
-  reviews: Store["reviews"];
-  whatsapp: string;
-};
-
-let catalogCache: CatalogSlice | null = null;
-let catalogFlight: Promise<CatalogSlice> | null = null;
-
-function catalogFromMemory(): CatalogSlice {
-  hydrate(memory!);
-  return {
-    categories: memory!.categories,
-    products: memory!.products,
-    reviews: memory!.reviews,
-    whatsapp: memory!.whatsapp ?? "",
-  };
-}
-
-async function loadCatalog(): Promise<CatalogSlice> {
-  if (memory) return catalogFromMemory();
-  if (catalogCache) return catalogCache;
-  if (!catalogFlight) {
-    catalogFlight = fetchCatalog()
-      .then((catalog) => {
-        if (!catalog.categories.length) {
-          catalog.categories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
-        }
-        catalogCache = catalog;
-        return catalog;
-      })
-      .finally(() => {
-        catalogFlight = null;
-      });
+export const readCatalog = cache(async () => {
+  await connection();
+  const catalog = await fetchCatalog();
+  if (!catalog.categories.length) {
+    catalog.categories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
   }
-  return catalogFlight;
-}
-
-export const readCatalog = cache(async () => loadCatalog());
+  for (const product of catalog.products) product.imageUrl ??= "";
+  for (const category of catalog.categories) category.imageUrl ??= "";
+  return structuredClone(catalog);
+});
 
 export async function buyerReceived(userId: string, productId: string) {
-  if (memory) {
-    return memory.orders.some(
-      (order) =>
-        order.userId === userId &&
-        order.status === "delivered" &&
-        order.items.some((item) => item.productId === productId),
-    );
-  }
   return hasDeliveredPiece(userId, productId);
 }
 
 export const readUser = cache(async (id: string): Promise<User | null> => {
-  if (memory) return memory.users.find((user) => user.id === id) ?? null;
+  await connection();
   return fetchUserById(id);
 });
 
+export const readUserByEmail = cache(async (email: string): Promise<User | null> => {
+  await connection();
+  return fetchUserByEmail(email);
+});
+
+export const readSellables = cache(async () => {
+  await connection();
+  return fetchSellables();
+});
+
+export const readOrdersForUser = cache(async (userId: string) => {
+  await connection();
+  return fetchOrdersForUser(userId);
+});
+
+export const readOrderByNumber = cache(async (number: string) => {
+  await connection();
+  return fetchOrderByNumber(number);
+});
+
+function publishShop() {
+  revalidatePath("/", "layout");
+  revalidatePath("/admin", "layout");
+}
+
 export async function updateStore<T>(mutator: (store: Store) => T): Promise<T> {
   const run = queue.then(async () => {
-    const store = await load();
-    hydrate(store);
-    const result = mutator(store);
-    memory = store;
-    catalogCache = null;
-    await writeStore(store);
-    return result;
+    const sql = getSql();
+    try {
+      const result = (await sql.begin(async (tx) => {
+        await tx`insert into shop_meta (key, value) values ('seq', '1905') on conflict (key) do nothing`;
+        await tx`select value from shop_meta where key = 'seq' for update`;
+        const current = await fetchStore(tx);
+        const before = structuredClone(current);
+        const store = hydrate(structuredClone(current));
+        const value = mutator(store);
+        await persistDiff(tx, before, store);
+        return value;
+      })) as T;
+      clearThemeCache();
+      try {
+        publishShop();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Refresh failed";
+        console.error("shop refresh failed", message);
+      }
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Save failed";
+      console.error("shop save failed", message);
+      throw new Error("The save did not reach the shop.");
+    }
   });
   queue = run.then(
     () => undefined,

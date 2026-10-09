@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { markMessage } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 
 export function MessageActions({ id, read, email }: { id: string; read: boolean; email: string }) {
   const router = useRouter();
@@ -19,9 +20,8 @@ export function MessageActions({ id, read, email }: { id: string; read: boolean;
         className="text-sage-deep underline"
         disabled={pending}
         onClick={async () => {
-          setPending(true);
-          const result = await markMessage(id, !read);
-          setPending(false);
+          const result = await guardSave(setPending, () => markMessage(id, !read));
+          if (!result) return;
           if (!result.ok) {
             toast.error(result.error);
             return;

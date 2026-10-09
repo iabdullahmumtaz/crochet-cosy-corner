@@ -5,13 +5,10 @@ import { Header } from "@/components/header";
 import { WhatsAppChat } from "@/components/whatsapp-chat";
 import { getCurrentUser } from "@/lib/auth";
 import { readCatalog } from "@/lib/db";
-import { CATEGORIES } from "@/lib/domain";
-
-const headerCategories = CATEGORIES.map((category) => ({ ...category, imageUrl: "" }));
 
 async function ShopHeader() {
-  const user = await getCurrentUser();
-  return <Header user={user} categories={headerCategories} />;
+  const [user, catalog] = await Promise.all([getCurrentUser(), readCatalog()]);
+  return <Header user={user} categories={catalog.categories} />;
 }
 
 async function ShopWhatsApp() {

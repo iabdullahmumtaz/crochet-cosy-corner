@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { placeOrder, quoteCart } from "@/actions/shop";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 import { useCart } from "@/components/cart-provider";
 import { CITIES, FREE_DELIVERY, PAYMENTS } from "@/lib/domain";
@@ -56,8 +57,7 @@ export function CheckoutForm({ user }: { user: PublicUser | null }) {
       onSubmit={async (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        setPending(true);
-        const result = await placeOrder({
+        const result = await guardSave(setPending, () => placeOrder({
           name: data.get("name"),
           email: user?.email ?? data.get("email"),
           phone,
@@ -69,8 +69,8 @@ export function CheckoutForm({ user }: { user: PublicUser | null }) {
           company: data.get("company"),
           coupon,
           items: items.map((item) => ({ productId: item.productId, qty: item.qty })),
-        });
-        setPending(false);
+        }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

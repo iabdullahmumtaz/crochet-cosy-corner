@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { saveTheme } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { Button } from "@/components/button";
 import { THEMES, type ThemeId } from "@/lib/themes";
 
@@ -17,9 +18,8 @@ export function ThemePicker({ current }: { current: ThemeId }) {
       className="rounded-[28px] border border-line bg-white p-5"
       onSubmit={async (event) => {
         event.preventDefault();
-        setPending(true);
-        const result = await saveTheme({ theme: picked });
-        setPending(false);
+        const result = await guardSave(setPending, () => saveTheme({ theme: picked }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

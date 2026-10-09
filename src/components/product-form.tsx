@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { saveProduct, uploadDeskImage } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { ProductArt } from "@/components/product-art";
 import { Button, Field, controlClass } from "@/components/button";
 import { MOTIFS, PALETTE_IDS, PALETTES, type Motif, type PaletteId } from "@/lib/domain";
@@ -24,33 +25,30 @@ export function ProductForm({ product, categories }: { product?: Product; catego
         const data = new FormData(event.currentTarget);
         const compareRaw = String(data.get("compareAt") ?? "").trim();
         const file = data.get("file");
-        setPending(true);
-        let imageUrl = product?.imageUrl ?? "";
-        if (file instanceof File && file.size > 0) {
-          const uploaded = await uploadDeskImage(data);
-          if (!uploaded.ok) {
-            setPending(false);
-            toast.error(uploaded.error);
-            return;
+        const result = await guardSave(setPending, async () => {
+          let imageUrl = product?.imageUrl ?? "";
+          if (file instanceof File && file.size > 0) {
+            const uploaded = await uploadDeskImage(data);
+            if (!uploaded.ok) return uploaded;
+            imageUrl = uploaded.url;
           }
-          imageUrl = uploaded.url;
-        }
-        const result = await saveProduct({
-          id: product?.id,
-          name: data.get("name"),
-          description: data.get("description"),
-          price: Number(data.get("price")),
-          compareAt: compareRaw ? Number(compareRaw) : null,
-          category: data.get("category"),
-          motif,
-          palette,
-          stock: Number(data.get("stock")),
-          yarn: data.get("yarn"),
-          featured: data.get("featured") === "on",
-          active: data.get("active") === "on",
-          imageUrl,
+          return saveProduct({
+            id: product?.id,
+            name: data.get("name"),
+            description: data.get("description"),
+            price: Number(data.get("price")),
+            compareAt: compareRaw ? Number(compareRaw) : null,
+            category: data.get("category"),
+            motif,
+            palette,
+            stock: Number(data.get("stock")),
+            yarn: data.get("yarn"),
+            featured: data.get("featured") === "on",
+            active: data.get("active") === "on",
+            imageUrl,
+          });
         });
-        setPending(false);
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

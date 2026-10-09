@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateCustomer } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 import { CITIES } from "@/lib/domain";
 
@@ -27,14 +28,13 @@ export function CustomerEditor({
       onSubmit={async (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        setPending(true);
-        const result = await updateCustomer({
+        const result = await guardSave(setPending, () => updateCustomer({
           id,
           name: data.get("name"),
           phone: data.get("phone") ?? "",
           city: data.get("city") ?? "",
-        });
-        setPending(false);
+        }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

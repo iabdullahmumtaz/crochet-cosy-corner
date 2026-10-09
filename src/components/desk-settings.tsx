@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { removeSubscriber, saveNextNumber, saveWhatsapp } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 
 export function DeskSettings({
@@ -27,16 +28,14 @@ export function DeskSettings({
         onSubmit={async (event) => {
           event.preventDefault();
           const data = new FormData(event.currentTarget);
-          setPending(true);
-          const whatsapp = await saveWhatsapp({ whatsapp: data.get("whatsapp") ?? "" });
-          const next = await saveNextNumber({ seq: Number(data.get("seq")) });
-          setPending(false);
-          if (!whatsapp.ok) {
-            toast.error(whatsapp.error);
-            return;
-          }
-          if (!next.ok) {
-            toast.error(next.error);
+          const saved = await guardSave(setPending, async () => {
+            const whatsapp = await saveWhatsapp({ whatsapp: data.get("whatsapp") ?? "" });
+            if (!whatsapp.ok) return whatsapp;
+            return saveNextNumber({ seq: Number(data.get("seq")) });
+          });
+          if (!saved) return;
+          if (!saved.ok) {
+            toast.error(saved.error);
             return;
           }
           toast.success("Desk settings saved");
@@ -63,7 +62,8 @@ export function DeskSettings({
                 type="button"
                 className="text-sale"
                 onClick={async () => {
-                  const result = await removeSubscriber(person.id);
+                  const result = await guardSave(setPending, () => removeSubscriber(person.id));
+                  if (!result) return;
                   if (!result.ok) toast.error(result.error);
                   else {
                     toast.success("Removed from the list");

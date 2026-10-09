@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { addReview } from "@/actions/shop";
+import { guardSave } from "@/lib/guard-save";
 import { Button, controlClass } from "@/components/button";
 
 export function ReviewForm({ productId }: { productId: string }) {
@@ -17,9 +18,8 @@ export function ReviewForm({ productId }: { productId: string }) {
       onSubmit={async (event) => {
         event.preventDefault();
         const text = String(new FormData(event.currentTarget).get("text") ?? "");
-        setPending(true);
-        const result = await addReview({ productId, rating, text });
-        setPending(false);
+        const result = await guardSave(setPending, () => addReview({ productId, rating, text }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;

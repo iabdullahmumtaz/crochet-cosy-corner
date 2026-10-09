@@ -27,12 +27,14 @@ function ShopChrome({
   category,
   q,
   sort,
+  categories,
 }: {
   title: string;
   blurb: string;
   category: string;
   q: string;
   sort: string;
+  categories: { id: string; label: string }[];
 }) {
   return (
     <>
@@ -40,7 +42,7 @@ function ShopChrome({
       <p className="hero-rise mt-2 max-w-xl text-sm text-muted" style={{ animationDelay: "80ms" }}>{blurb}</p>
       <div className="hero-rise mt-6 flex gap-2 overflow-x-auto pb-1" style={{ animationDelay: "140ms" }}>
         <Link href="/shop" className={`shrink-0 rounded-full px-4 py-2 text-sm ${category ? "bg-white text-bark" : "bg-sage text-white"}`}>All</Link>
-        {CATEGORIES.map((item) => (
+        {categories.map((item) => (
           <Link
             key={item.id}
             href={`/shop?category=${item.id}`}
@@ -68,7 +70,8 @@ function ShopChrome({
 async function ShopHeading({ searchParams }: { searchParams: Promise<ShopQuery> }) {
   const params = await searchParams;
   const category = params.category ?? "";
-  const current = CATEGORIES.find((item) => item.id === category);
+  const catalog = await readCatalog();
+  const current = catalog.categories.find((item) => item.id === category);
   return (
     <ShopChrome
       title={current?.label ?? "Shop"}
@@ -76,6 +79,7 @@ async function ShopHeading({ searchParams }: { searchParams: Promise<ShopQuery> 
       category={category}
       q={(params.q ?? "").trim()}
       sort={params.sort ?? "featured"}
+      categories={catalog.categories}
     />
   );
 }
@@ -132,6 +136,7 @@ export default function ShopPage({ searchParams }: { searchParams: Promise<ShopQ
             category=""
             q=""
             sort="featured"
+            categories={[]}
           />
         }
       >

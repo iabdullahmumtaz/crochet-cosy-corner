@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { saveWhatsapp } from "@/actions/admin";
+import { guardSave } from "@/lib/guard-save";
 import { Button, Field, controlClass } from "@/components/button";
 
 export function WhatsappSettings({ number }: { number: string }) {
@@ -16,9 +17,8 @@ export function WhatsappSettings({ number }: { number: string }) {
       onSubmit={async (event) => {
         event.preventDefault();
         const whatsapp = String(new FormData(event.currentTarget).get("whatsapp") ?? "");
-        setPending(true);
-        const result = await saveWhatsapp({ whatsapp });
-        setPending(false);
+        const result = await guardSave(setPending, () => saveWhatsapp({ whatsapp }));
+        if (!result) return;
         if (!result.ok) {
           toast.error(result.error);
           return;
